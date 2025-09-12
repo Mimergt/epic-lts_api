@@ -2,8 +2,8 @@ jQuery(document).ready(function($) {
     
     // Añadir nuevo mapeo
     $('#add-mapping').on('click', function() {
-        var originalPhone = $('#original_phone').val().trim();
-        var mappedCamphone = $('#mapped_camphone').val().trim();
+        var originalPhone = $('#original_phone').val().trim().replace(/\s+/g, ''); // Quitar todos los espacios
+        var mappedCamphone = $('#mapped_camphone').val().trim().replace(/\s+/g, ''); // Quitar todos los espacios
         
         if (!originalPhone || !mappedCamphone) {
             alert('Por favor, completa ambos campos.');
@@ -19,13 +19,19 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: leads_lts_ajax.ajax_url,
             type: 'POST',
+            dataType: 'json',
             data: {
                 action: 'save_phone_mapping',
                 nonce: leads_lts_ajax.nonce,
                 original_phone: originalPhone,
                 mapped_camphone: mappedCamphone
             },
+            beforeSend: function() {
+                $('#add-mapping').prop('disabled', true).text('Guardando...');
+            },
             success: function(response) {
+                $('#add-mapping').prop('disabled', false).text('Añadir Mapeo');
+                
                 if (response.success) {
                     // Agregar fila a la tabla
                     addMappingRow(originalPhone, mappedCamphone);
@@ -36,11 +42,15 @@ jQuery(document).ready(function($) {
                     
                     alert('Mapeo añadido exitosamente');
                 } else {
-                    alert('Error: ' + response.data);
+                    alert('Error: ' + (response.data || 'Error desconocido'));
                 }
             },
-            error: function() {
-                alert('Error al conectar con el servidor');
+            error: function(xhr, status, error) {
+                $('#add-mapping').prop('disabled', false).text('Añadir Mapeo');
+                console.log('AJAX Error:', xhr.responseText);
+                console.log('Status:', status);
+                console.log('Error:', error);
+                alert('Error al conectar con el servidor. Revisa la consola para más detalles.');
             }
         });
     });
@@ -57,6 +67,7 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: leads_lts_ajax.ajax_url,
             type: 'POST',
+            dataType: 'json',
             data: {
                 action: 'delete_phone_mapping',
                 nonce: leads_lts_ajax.nonce,
@@ -69,11 +80,14 @@ jQuery(document).ready(function($) {
                         checkEmptyTable();
                     });
                 } else {
-                    alert('Error: ' + response.data);
+                    alert('Error: ' + (response.data || 'Error desconocido'));
                 }
             },
-            error: function() {
-                alert('Error al conectar con el servidor');
+            error: function(xhr, status, error) {
+                console.log('AJAX Error:', xhr.responseText);
+                console.log('Status:', status);
+                console.log('Error:', error);
+                alert('Error al conectar con el servidor. Revisa la consola para más detalles.');
             }
         });
     });
@@ -127,6 +141,17 @@ jQuery(document).ready(function($) {
     $('#original_phone, #mapped_camphone').on('keypress', function(e) {
         if (e.which === 13) { // Enter key
             $('#add-mapping').click();
+        }
+    });
+    
+    // Limpiar espacios automáticamente mientras se escribe
+    $('#original_phone, #mapped_camphone').on('input', function() {
+        var cursorPos = this.selectionStart;
+        var valueWithoutSpaces = this.value.replace(/\s+/g, '');
+        if (this.value !== valueWithoutSpaces) {
+            this.value = valueWithoutSpaces;
+            // Mantener la posición del cursor
+            this.setSelectionRange(cursorPos - 1, cursorPos - 1);
         }
     });
 });

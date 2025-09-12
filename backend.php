@@ -186,44 +186,73 @@ class LeadsLTSAdmin {
      * AJAX: Guardar mapeo de teléfono
      */
     public function save_phone_mapping() {
-        if (!wp_verify_nonce($_POST['nonce'], 'leads_lts_nonce')) {
-            wp_die('Nonce verification failed');
+        // Verificar nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'leads_lts_nonce')) {
+            wp_send_json_error('Verificación de seguridad fallida');
+            return;
         }
 
+        // Verificar permisos
         if (!current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+            wp_send_json_error('Permisos insuficientes');
+            return;
+        }
+
+        // Validar datos
+        if (!isset($_POST['original_phone']) || !isset($_POST['mapped_camphone'])) {
+            wp_send_json_error('Datos incompletos');
+            return;
         }
 
         $original_phone = sanitize_text_field($_POST['original_phone']);
         $mapped_camphone = sanitize_text_field($_POST['mapped_camphone']);
+
+        // Quitar espacios adicionales
+        $original_phone = preg_replace('/\s+/', '', $original_phone);
+        $mapped_camphone = preg_replace('/\s+/', '', $mapped_camphone);
 
         if (empty($original_phone) || empty($mapped_camphone)) {
             wp_send_json_error('Ambos campos son obligatorios');
             return;
         }
 
+        // Guardar en base de datos
         $phone_mappings = get_option('leads_lts_phone_mappings', array());
         $phone_mappings[$original_phone] = $mapped_camphone;
         
-        update_option('leads_lts_phone_mappings', $phone_mappings);
-
-        wp_send_json_success(array(
-            'message' => 'Mapeo guardado exitosamente',
-            'original' => $original_phone,
-            'camphone' => $mapped_camphone
-        ));
+        $result = update_option('leads_lts_phone_mappings', $phone_mappings);
+        
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => 'Mapeo guardado exitosamente',
+                'original' => $original_phone,
+                'camphone' => $mapped_camphone
+            ));
+        } else {
+            wp_send_json_error('Error al guardar en la base de datos');
+        }
     }
 
     /**
      * AJAX: Eliminar mapeo de teléfono
      */
     public function delete_phone_mapping() {
-        if (!wp_verify_nonce($_POST['nonce'], 'leads_lts_nonce')) {
-            wp_die('Nonce verification failed');
+        // Verificar nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'leads_lts_nonce')) {
+            wp_send_json_error('Verificación de seguridad fallida');
+            return;
         }
 
+        // Verificar permisos
         if (!current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+            wp_send_json_error('Permisos insuficientes');
+            return;
+        }
+
+        // Validar datos
+        if (!isset($_POST['original_phone'])) {
+            wp_send_json_error('Datos incompletos');
+            return;
         }
 
         $original_phone = sanitize_text_field($_POST['original_phone']);
@@ -232,8 +261,13 @@ class LeadsLTSAdmin {
         
         if (isset($phone_mappings[$original_phone])) {
             unset($phone_mappings[$original_phone]);
-            update_option('leads_lts_phone_mappings', $phone_mappings);
-            wp_send_json_success('Mapeo eliminado exitosamente');
+            $result = update_option('leads_lts_phone_mappings', $phone_mappings);
+            
+            if ($result) {
+                wp_send_json_success('Mapeo eliminado exitosamente');
+            } else {
+                wp_send_json_error('Error al eliminar de la base de datos');
+            }
         } else {
             wp_send_json_error('Mapeo no encontrado');
         }
