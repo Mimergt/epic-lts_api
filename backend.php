@@ -247,16 +247,6 @@ class LeadsLTSAdmin {
         #mappings-table-body tr:hover {
             background-color: #f5f5f5;
         }
-        .leads-lts-log-container {
-            background: #1e1e1e;
-            color: #ffffff;
-            padding: 15px;
-            border-radius: 4px;
-            font-family: monospace;
-            max-height: 500px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
         </style>
         <?php
     }
@@ -266,37 +256,117 @@ class LeadsLTSAdmin {
      */
     public function log_page() {
         ?>
-        <div class="wrap">
-            <h1>Log de Leads to LTS API</h1>
+        <style>
+        .leads-lts-log-wrapper {
+            max-width: 100%;
+            margin: 0;
+        }
+        .leads-lts-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .leads-lts-log-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .leads-lts-log-status {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        .leads-lts-log-main {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            min-height: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            border: 1px solid #ddd;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .leads-lts-log-empty {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            padding: 40px;
+        }
+        .leads-lts-log-entry {
+            border-bottom: 1px solid #333;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        .leads-lts-log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .log-timestamp {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .log-response {
+            color: #2196F3;
+        }
+        .log-data {
+            color: #FF9800;
+        }
+        </style>
+        
+        <div class="wrap leads-lts-log-wrapper">
+            <h1>📋 Log de Leads to LTS API</h1>
             
-            <div class="card">
-                <h2>Log de API LTS</h2>
-                <p>Este log muestra todas las llamadas realizadas a la API LTS cuando está activado.</p>
-                
-                <div style="margin: 15px 0;">
-                    <button type="button" id="refresh-log" class="button">🔄 Actualizar Log</button>
-                    <button type="button" id="clear-log" class="button" style="margin-left: 10px;">🗑️ Limpiar Log</button>
+            <div class="leads-lts-log-header">
+                <div class="leads-lts-log-status">
+                    <span><strong>Log de API:</strong> 
+                        <?php echo get_option('leads_lts_enable_api_log', '0') == '1' ? 
+                            '<span style="color: green;">✅ Activado</span>' : 
+                            '<span style="color: red;">❌ Desactivado</span>'; ?>
+                    </span>
+                    <span><strong>Debug Consola:</strong> 
+                        <?php echo get_option('leads_lts_enable_debug', '0') == '1' ? 
+                            '<span style="color: green;">✅ Activado</span>' : 
+                            '<span style="color: red;">❌ Desactivado</span>'; ?>
+                    </span>
                 </div>
                 
-                <div class="leads-lts-log-container" id="log-content">
-                    <?php echo esc_html($this->get_api_log_content()); ?>
+                <div class="leads-lts-log-controls">
+                    <button type="button" id="refresh-log" class="button button-secondary">
+                        🔄 Actualizar
+                    </button>
+                    <button type="button" id="clear-log" class="button button-secondary">
+                        🗑️ Limpiar Log
+                    </button>
+                    <a href="<?php echo admin_url('admin.php?page=leads-lts-admin'); ?>" class="button button-primary">
+                        ⚙️ Configuración
+                    </a>
                 </div>
             </div>
             
-            <div class="card">
-                <h2>Estado del Log</h2>
-                <p><strong>Log de API LTS:</strong> 
-                    <?php echo get_option('leads_lts_enable_api_log', '0') == '1' ? 
-                        '<span style="color: green;">✅ Activado</span>' : 
-                        '<span style="color: red;">❌ Desactivado</span>'; ?>
-                </p>
-                <p><strong>Log en Consola:</strong> 
-                    <?php echo get_option('leads_lts_enable_debug', '0') == '1' ? 
-                        '<span style="color: green;">✅ Activado</span>' : 
-                        '<span style="color: red;">❌ Desactivado</span>'; ?>
-                </p>
-                <p>Para activar/desactivar los logs, ve a la <a href="<?php echo admin_url('admin.php?page=leads-lts-admin'); ?>">configuración principal</a>.</p>
+            <div class="leads-lts-log-main" id="log-content">
+                <?php 
+                $log_content = $this->get_api_log_content();
+                if (empty(trim($log_content)) || strpos($log_content, 'No se ha encontrado') !== false || strpos($log_content, 'está vacío') !== false) {
+                    echo '<div class="leads-lts-log-empty">' . esc_html($log_content) . '</div>';
+                } else {
+                    echo $this->format_log_content($log_content);
+                }
+                ?>
             </div>
+            
+            <p style="margin-top: 15px; color: #666; font-size: 13px;">
+                💡 <strong>Tip:</strong> Para activar el logging de API, ve a Configuración y marca "Log de API LTS". 
+                Los logs se generan automáticamente cuando se envían formularios a la API.
+            </p>
         </div>
 
         <script>
@@ -346,6 +416,55 @@ class LeadsLTSAdmin {
         $lines = array_slice($lines, -50); // Últimas 50 líneas
         
         return implode("\n", $lines);
+    }
+
+    /**
+     * Formatear contenido del log para mejor visualización
+     */
+    private function format_log_content($content) {
+        if (empty($content)) {
+            return '<div class="leads-lts-log-empty">No hay contenido en el log</div>';
+        }
+
+        // Dividir el contenido en entradas separadas por dobles saltos de línea
+        $entries = preg_split('/\n\s*\n/', $content);
+        $entries = array_filter($entries);
+        $entries = array_reverse($entries); // Mostrar las más recientes primero
+        
+        $formatted = '';
+        foreach ($entries as $entry) {
+            if (empty(trim($entry))) continue;
+            
+            $lines = explode("\n", $entry);
+            $formatted_entry = '<div class="leads-lts-log-entry">';
+            
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line)) continue;
+                
+                $line = esc_html($line);
+                
+                // Colorear diferentes tipos de información
+                if (strpos($line, 'Response:') === 0) {
+                    $formatted_entry .= '<div class="log-response">' . $line . '</div>';
+                } elseif (strpos($line, 'Phone Campaign:') === 0 || strpos($line, 'Campaign ID:') === 0) {
+                    $formatted_entry .= '<div class="log-data">' . $line . '</div>';
+                } elseif (strpos($line, 'Name:') === 0 || strpos($line, 'Email:') === 0 || strpos($line, 'Phone:') === 0) {
+                    $formatted_entry .= '<div class="log-data">' . $line . '</div>';
+                } elseif (strpos($line, 'Origen URL:') === 0 || strpos($line, 'End URL:') === 0) {
+                    $formatted_entry .= '<div style="color: #9C27B0;">' . $line . '</div>';
+                } elseif (strpos($line, 'User IP:') === 0 || strpos($line, 'Formulario:') === 0) {
+                    $formatted_entry .= '<div style="color: #607D8B;">' . $line . '</div>';
+                } else {
+                    $formatted_entry .= '<div>' . $line . '</div>';
+                }
+            }
+            
+            $formatted_entry .= '</div>';
+            $formatted .= $formatted_entry;
+        }
+        
+        return $formatted ?: '<div class="leads-lts-log-empty">No se pudieron formatear las entradas del log</div>';
     }
 
     /**
