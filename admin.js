@@ -43,7 +43,7 @@ jQuery(document).ready(function($) {
             type: 'POST',
             dataType: 'json',
             data: {
-                action: 'save_phone_mapping',
+                action: 'leads_lts_save_phone_mapping',
                 nonce: leads_lts_ajax.nonce,
                 original_phone: originalPhone,
                 mapped_camphone: mappedCamphone
@@ -91,7 +91,7 @@ jQuery(document).ready(function($) {
             type: 'POST',
             dataType: 'json',
             data: {
-                action: 'delete_phone_mapping',
+                action: 'leads_lts_delete_phone_mapping',
                 nonce: leads_lts_ajax.nonce,
                 original_phone: originalPhone
             },

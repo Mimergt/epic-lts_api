@@ -12,8 +12,8 @@ class LeadsLTSAdmin {
     public function __construct() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'admin_init'));
-        add_action('wp_ajax_save_phone_mapping', array($this, 'save_phone_mapping'));
-        add_action('wp_ajax_delete_phone_mapping', array($this, 'delete_phone_mapping'));
+        add_action('wp_ajax_leads_lts_save_phone_mapping', array($this, 'save_phone_mapping'));
+        add_action('wp_ajax_leads_lts_delete_phone_mapping', array($this, 'delete_phone_mapping'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
     }
 
@@ -187,82 +187,106 @@ class LeadsLTSAdmin {
      * AJAX: Guardar mapeo de teléfono
      */
     public function save_phone_mapping() {
+        // Headers para debugging
+        header('Content-Type: application/json');
+        
         try {
+            // Verificar si es POST
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                wp_send_json_error('Método no permitido');
+                exit;
+            }
+            
             // Verificar nonce
-            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'leads_lts_nonce')) {
+            $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
+            if (empty($nonce) || !wp_verify_nonce($nonce, 'leads_lts_nonce')) {
                 wp_send_json_error('Verificación de seguridad fallida');
-                wp_die();
+                exit;
             }
 
             // Verificar permisos
             if (!current_user_can('manage_options')) {
                 wp_send_json_error('Permisos insuficientes');
-                wp_die();
+                exit;
             }
 
-            // Validar datos
-            if (!isset($_POST['original_phone']) || !isset($_POST['mapped_camphone'])) {
-                wp_send_json_error('Datos incompletos');
-                wp_die();
-            }
+            // Obtener datos
+            $original_phone = isset($_POST['original_phone']) ? sanitize_text_field($_POST['original_phone']) : '';
+            $mapped_camphone = isset($_POST['mapped_camphone']) ? sanitize_text_field($_POST['mapped_camphone']) : '';
 
-            $original_phone = sanitize_text_field($_POST['original_phone']);
-            $mapped_camphone = sanitize_text_field($_POST['mapped_camphone']);
-
-            // Quitar espacios adicionales
+            // Quitar espacios
             $original_phone = preg_replace('/\s+/', '', $original_phone);
             $mapped_camphone = preg_replace('/\s+/', '', $mapped_camphone);
 
             if (empty($original_phone) || empty($mapped_camphone)) {
                 wp_send_json_error('Ambos campos son obligatorios');
-                wp_die();
+                exit;
             }
 
             // Guardar en base de datos
             $phone_mappings = get_option('leads_lts_phone_mappings', array());
+            if (!is_array($phone_mappings)) {
+                $phone_mappings = array();
+            }
+            
             $phone_mappings[$original_phone] = $mapped_camphone;
             
-            update_option('leads_lts_phone_mappings', $phone_mappings);
+            $saved = update_option('leads_lts_phone_mappings', $phone_mappings);
             
             wp_send_json_success(array(
                 'message' => 'Mapeo guardado exitosamente',
                 'original' => $original_phone,
-                'camphone' => $mapped_camphone
+                'camphone' => $mapped_camphone,
+                'saved' => $saved
             ));
             
         } catch (Exception $e) {
             wp_send_json_error('Error interno: ' . $e->getMessage());
+        } catch (Error $e) {
+            wp_send_json_error('Error fatal: ' . $e->getMessage());
         }
         
-        wp_die();
+        exit;
     }
 
     /**
      * AJAX: Eliminar mapeo de teléfono
      */
     public function delete_phone_mapping() {
+        header('Content-Type: application/json');
+        
         try {
+            // Verificar si es POST
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                wp_send_json_error('Método no permitido');
+                exit;
+            }
+            
             // Verificar nonce
-            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'leads_lts_nonce')) {
+            $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
+            if (empty($nonce) || !wp_verify_nonce($nonce, 'leads_lts_nonce')) {
                 wp_send_json_error('Verificación de seguridad fallida');
-                wp_die();
+                exit;
             }
 
             // Verificar permisos
             if (!current_user_can('manage_options')) {
                 wp_send_json_error('Permisos insuficientes');
-                wp_die();
+                exit;
             }
 
-            // Validar datos
-            if (!isset($_POST['original_phone'])) {
-                wp_send_json_error('Datos incompletos');
-                wp_die();
-            }
+            // Obtener datos
+            $original_phone = isset($_POST['original_phone']) ? sanitize_text_field($_POST['original_phone']) : '';
 
-            $original_phone = sanitize_text_field($_POST['original_phone']);
+            if (empty($original_phone)) {
+                wp_send_json_error('Teléfono requerido');
+                exit;
+            }
 
             $phone_mappings = get_option('leads_lts_phone_mappings', array());
+            if (!is_array($phone_mappings)) {
+                $phone_mappings = array();
+            }
             
             if (isset($phone_mappings[$original_phone])) {
                 unset($phone_mappings[$original_phone]);
@@ -274,9 +298,11 @@ class LeadsLTSAdmin {
             
         } catch (Exception $e) {
             wp_send_json_error('Error interno: ' . $e->getMessage());
+        } catch (Error $e) {
+            wp_send_json_error('Error fatal: ' . $e->getMessage());
         }
         
-        wp_die();
+        exit;
     }
 
     /**

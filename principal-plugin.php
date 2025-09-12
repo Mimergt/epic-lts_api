@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS y redirige a una página de gracias.
-Version: 4
+Version: 4.1.02
 Author: Mimer - EPIC.GT
 */
 
@@ -14,8 +14,6 @@ if (!defined('ABSPATH')) {
 // Incluir backend si estamos en admin
 if (is_admin()) {
     require_once plugin_dir_path(__FILE__) . 'backend.php';
-    // Debug temporal - borrar después
-    require_once plugin_dir_path(__FILE__) . 'debug.php';
 }
 
 function add_custom_script() {
