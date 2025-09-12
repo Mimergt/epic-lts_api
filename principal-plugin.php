@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS y redirige a una página de gracias.
-Version: 4.2.0
+Version: 4.2.1
 Author: Mimer - EPIC.GT
 */
 
@@ -27,7 +27,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.2.0', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.2.1', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
@@ -49,8 +49,8 @@ add_action('elementor_pro/forms/validation/tel', function($field, $record, $ajax
     
     $tel_value = preg_replace('/\D/', '', $field['value']); // Eliminar caracteres no numéricos
     
-    if (strlen($tel_value) !== 11) {
-        $ajax_handler->add_error($field['id'], 'Por favor ingrese un número con exactamente 11 dígitos');
+    if (strlen($tel_value) !== 10) {
+        $ajax_handler->add_error($field['id'], 'Por favor ingrese un número con exactamente 10 dígitos');
     } else {
         
         function applts_mx_produccion( $record, $ajax_handler ){
