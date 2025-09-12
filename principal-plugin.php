@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS y redirige a una página de gracias.
-Version: 4.1.02
+Version: 4.2.0
 Author: Mimer - EPIC.GT
 */
 
@@ -24,14 +24,16 @@ function add_custom_script() {
     // Obtener mapeos de teléfonos desde la base de datos
     $phone_mappings = get_option('leads_lts_phone_mappings', array());
     $default_camphone = get_option('leads_lts_default_camphone', '5592509960');
+    $phone_selector = get_option('leads_lts_phone_selector', '#call');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '1.0', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.2.0', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
         'phone_mappings' => $phone_mappings, // Mapeos de teléfonos
-        'default_camphone' => $default_camphone // CamPhone por defecto
+        'default_camphone' => $default_camphone, // CamPhone por defecto
+        'phone_selector' => $phone_selector // Selector del elemento teléfono
     ));
 }
 add_action('wp_enqueue_scripts', 'add_custom_script');

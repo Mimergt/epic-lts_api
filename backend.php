@@ -38,6 +38,7 @@ class LeadsLTSAdmin {
     public function admin_init() {
         register_setting('leads_lts_settings', 'leads_lts_phone_mappings');
         register_setting('leads_lts_settings', 'leads_lts_default_camphone');
+        register_setting('leads_lts_settings', 'leads_lts_phone_selector');
     }
 
     /**
@@ -62,12 +63,13 @@ class LeadsLTSAdmin {
     public function admin_page() {
         $phone_mappings = get_option('leads_lts_phone_mappings', array());
         $default_camphone = get_option('leads_lts_default_camphone', '');
+        $phone_selector = get_option('leads_lts_phone_selector', '#call');
         ?>
         <div class="wrap">
             <h1>Configuración Leads to LTS API</h1>
             
             <div class="card">
-                <h2>CamPhone por Defecto</h2>
+                <h2>Configuración General</h2>
                 <form method="post" action="options.php">
                     <?php settings_fields('leads_lts_settings'); ?>
                     <table class="form-table">
@@ -78,8 +80,15 @@ class LeadsLTSAdmin {
                                 <p class="description">Este será el número asignado cuando no se encuentre mapeo específico.</p>
                             </td>
                         </tr>
+                        <tr>
+                            <th scope="row">Selector de Teléfono</th>
+                            <td>
+                                <input type="text" name="leads_lts_phone_selector" value="<?php echo esc_attr($phone_selector); ?>" class="regular-text" placeholder="Ej: #call" />
+                                <p class="description">Selector CSS del elemento que contiene el teléfono (por defecto: <code>#call</code>). Ejemplos: <code>#call</code>, <code>.phone</code>, <code>#telefono</code></p>
+                            </td>
+                        </tr>
                     </table>
-                    <?php submit_button('Guardar CamPhone Default'); ?>
+                    <?php submit_button('Guardar Configuración'); ?>
                 </form>
             </div>
 

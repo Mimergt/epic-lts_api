@@ -1,5 +1,7 @@
 jQuery(function($) {
-  var camPhone = $('#call').attr('href');
+  // Usar selector dinámico desde la configuración
+  var phoneSelector = my_ajax_object.phone_selector || '#call';
+  var camPhone = $(phoneSelector).attr('href');
   var url = new URL(window.location.href);
   var referer = window.location.origin + window.location.pathname;
 
@@ -11,47 +13,47 @@ jQuery(function($) {
   var phoneMap = my_ajax_object.phone_mappings || {};
   var defaultCamPhone = my_ajax_object.default_camphone || '5592509960';
 
-  // Debug completo para entender qué está pasando
+  // Debug completo para entender qué está pasando (solo una vez)
   console.log('=== LEADS LTS DEBUG ===');
-  console.log('Original Phone from #call:', camPhone);
+  console.log('Phone Selector:', phoneSelector);
+  console.log('Original Phone from selector:', camPhone);
   console.log('Phone Mappings from DB:', phoneMap);
   console.log('Default CamPhone:', defaultCamPhone);
   
-  // Verificar si existe el elemento #call
-  if (!$('#call').length) {
-    console.log('⚠️ Elemento #call no encontrado');
+  // Verificar si existe el elemento
+  if (!$(phoneSelector).length) {
+    console.log('⚠️ Elemento con selector', phoneSelector, 'no encontrado');
   }
 
-  // Set the value of camPhone input field to the corresponding value in the phoneMap
-  $('input[name="form_fields[camPhone]"]').val(function() {
-    var mappedValue;
-    var phoneToCheck = camPhone;
-    var phoneWithoutTel = camPhone ? camPhone.replace('tel:', '') : '';
-    
-    // Intentar buscar el mapeo con diferentes formatos
-    if (camPhone && phoneMap[camPhone]) {
-      // Búsqueda exacta (ej: tel:8008800810)
-      mappedValue = phoneMap[camPhone];
-      console.log('✅ Mapeo específico encontrado (formato completo):', camPhone, '->', mappedValue);
-    } else if (phoneWithoutTel && phoneMap[phoneWithoutTel]) {
-      // Búsqueda sin prefijo tel: (ej: 8008800810)
-      mappedValue = phoneMap[phoneWithoutTel];
-      console.log('✅ Mapeo específico encontrado (sin tel:):', phoneWithoutTel, '->', mappedValue);
-    } else {
-      // Usar default
-      mappedValue = defaultCamPhone;
-      console.log('📱 Usando CamPhone default:', mappedValue);
-      if (camPhone) {
-        console.log('❌ No se encontró mapeo para:', camPhone, 'ni para:', phoneWithoutTel);
-        console.log('💡 Revisa que el mapeo en el admin coincida exactamente');
-      }
+  // Calcular el valor una sola vez
+  var finalMappedValue;
+  var phoneToCheck = camPhone;
+  var phoneWithoutTel = camPhone ? camPhone.replace('tel:', '') : '';
+  
+  // Intentar buscar el mapeo con diferentes formatos
+  if (camPhone && phoneMap[camPhone]) {
+    // Búsqueda exacta (ej: tel:8008800810)
+    finalMappedValue = phoneMap[camPhone];
+    console.log('✅ Mapeo específico encontrado (formato completo):', camPhone, '->', finalMappedValue);
+  } else if (phoneWithoutTel && phoneMap[phoneWithoutTel]) {
+    // Búsqueda sin prefijo tel: (ej: 8008800810)
+    finalMappedValue = phoneMap[phoneWithoutTel];
+    console.log('✅ Mapeo específico encontrado (sin tel:):', phoneWithoutTel, '->', finalMappedValue);
+  } else {
+    // Usar default
+    finalMappedValue = defaultCamPhone;
+    console.log('📱 Usando CamPhone default:', finalMappedValue);
+    if (camPhone) {
+      console.log('❌ No se encontró mapeo para:', camPhone, 'ni para:', phoneWithoutTel);
+      console.log('💡 Revisa que el mapeo en el admin coincida exactamente');
     }
-    
-    console.log('Final mapped value:', mappedValue);
-    console.log('=== END DEBUG ===');
-    
-    return mappedValue;
-  });
+  }
+  
+  console.log('Final mapped value:', finalMappedValue);
+  console.log('=== END DEBUG ===');
+
+  // Asignar el valor calculado a todos los campos (sin logs adicionales)
+  $('input[name="form_fields[camPhone]"]').val(finalMappedValue);
 });
 
 
