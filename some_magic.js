@@ -11,12 +11,36 @@ jQuery(function($) {
   var phoneMap = my_ajax_object.phone_mappings || {};
   var defaultCamPhone = my_ajax_object.default_camphone || '5592509960';
 
+  // Debug completo para entender qué está pasando
+  console.log('=== LEADS LTS DEBUG ===');
+  console.log('Original Phone from #call:', camPhone);
+  console.log('Phone Mappings from DB:', phoneMap);
+  console.log('Default CamPhone:', defaultCamPhone);
+  
+  // Verificar si existe el elemento #call
+  if (!$('#call').length) {
+    console.log('⚠️ Elemento #call no encontrado');
+  }
+
   // Set the value of camPhone input field to the corresponding value in the phoneMap
   $('input[name="form_fields[camPhone]"]').val(function() {
-    var mappedValue = phoneMap[camPhone] || defaultCamPhone; // Usar mapeo o default
-    console.log('Original Phone:', camPhone);
-    console.log('Mapped Phone:', mappedValue);
-    console.log('Ref:', referer);
+    var mappedValue;
+    
+    // Si existe mapeo específico
+    if (camPhone && phoneMap[camPhone]) {
+      mappedValue = phoneMap[camPhone];
+      console.log('✅ Mapeo específico encontrado:', camPhone, '->', mappedValue);
+    } else {
+      mappedValue = defaultCamPhone;
+      console.log('📱 Usando CamPhone default:', mappedValue);
+      if (camPhone) {
+        console.log('❌ No se encontró mapeo para:', camPhone);
+      }
+    }
+    
+    console.log('Final mapped value:', mappedValue);
+    console.log('=== END DEBUG ===');
+    
     return mappedValue;
   });
 });

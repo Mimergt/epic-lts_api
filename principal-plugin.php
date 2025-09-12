@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 // Incluir backend si estamos en admin
 if (is_admin()) {
     require_once plugin_dir_path(__FILE__) . 'backend.php';
+    require_once plugin_dir_path(__FILE__) . 'test-ajax.php';
 }
 
 function add_custom_script() {

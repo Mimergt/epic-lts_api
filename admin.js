@@ -7,7 +7,7 @@ jQuery(document).ready(function($) {
             type: 'POST',
             dataType: 'json',
             data: {
-                action: 'leads_lts_test',
+                action: 'leads_lts_test_connection',
                 nonce: leads_lts_ajax.nonce
             },
             success: function(response) {
