@@ -1,27 +1,5 @@
 jQuery(document).ready(function($) {
     
-    // Test de conexión AJAX
-    $('#test-ajax').on('click', function() {
-        $.ajax({
-            url: leads_lts_ajax.ajax_url,
-            type: 'POST',
-            dataType: 'json',
-            data: {
-                action: 'leads_lts_test_connection',
-                nonce: leads_lts_ajax.nonce
-            },
-            success: function(response) {
-                alert('✅ Test exitoso: ' + response.data);
-            },
-            error: function(xhr, status, error) {
-                console.log('Test AJAX Error:', xhr.responseText);
-                console.log('Status:', status);
-                console.log('Error:', error);
-                alert('❌ Test falló. Revisa la consola para detalles.');
-            }
-        });
-    });
-    
     // Añadir nuevo mapeo
     $('#add-mapping').on('click', function() {
         var originalPhone = $('#original_phone').val().trim().replace(/\s+/g, ''); // Quitar todos los espacios

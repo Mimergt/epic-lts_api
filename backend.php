@@ -118,7 +118,6 @@ class LeadsLTSAdmin {
                             <th scope="row"></th>
                             <td>
                                 <button type="button" id="add-mapping" class="button button-primary">Añadir Mapeo</button>
-                                <button type="button" id="test-ajax" class="button button-secondary" style="margin-left: 10px;">Test Conexión</button>
                             </td>
                         </tr>
                     </table>
