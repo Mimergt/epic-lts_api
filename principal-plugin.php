@@ -24,6 +24,7 @@ function add_custom_script() {
     $phone_mappings = get_option('leads_lts_phone_mappings', array());
     $default_camphone = get_option('leads_lts_default_camphone', '5592509960');
     $phone_selector = get_option('leads_lts_phone_selector', '#call');
+    $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
     wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.2.0', true);
@@ -32,7 +33,8 @@ function add_custom_script() {
         'user_ip' => $userIP, // Añadir la IP del usuario
         'phone_mappings' => $phone_mappings, // Mapeos de teléfonos
         'default_camphone' => $default_camphone, // CamPhone por defecto
-        'phone_selector' => $phone_selector // Selector del elemento teléfono
+        'phone_selector' => $phone_selector, // Selector del elemento teléfono
+        'enable_debug' => $enable_debug // Activar/desactivar debug
     ));
 }
 add_action('wp_enqueue_scripts', 'add_custom_script');
@@ -116,9 +118,10 @@ add_action('elementor_pro/forms/validation/tel', function($field, $record, $ajax
             $response = curl_exec($curl);
             $url = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
         
-        //Log
-  //      file_put_contents( plugin_dir_path( __FILE__ ) . 'log.txt', "Response: " . $response . "\nPhone Campaign: " . $postData['phone_campaign'] . "\nCampaign ID: " . $postData['campaignid'] .  "\nOrigen URL: " . $postData['referer'] . "\nEnd URL: " . $url . "\nName: " . $postData['name'] .  "\nEmail: " . $postData['email'] . "\nUser IP: " . $postData['ip'] . "\nFormulario: " . $postData['CN'] . "\nPhone: " . $postData['phone'] . "\n\n", FILE_APPEND );
-            
+        // Log de API (si está activado)
+        if (get_option('leads_lts_enable_api_log', '0') == '1') {
+            file_put_contents( plugin_dir_path( __FILE__ ) . 'log.txt', "Response: " . $response . "\nPhone Campaign: " . $postData['phone_campaign'] . "\nCampaign ID: " . $postData['campaignid'] .  "\nOrigen URL: " . $postData['referer'] . "\nEnd URL: " . $url . "\nName: " . $postData['name'] .  "\nEmail: " . $postData['email'] . "\nUser IP: " . $postData['ip'] . "\nFormulario: " . $postData['CN'] . "\nPhone: " . $postData['phone'] . "\n\n", FILE_APPEND );
+        }
         curl_close($curl);
         
         // Set redirect URL	
