@@ -46,7 +46,7 @@ class LeadsLTSAdmin {
      * Inicializar configuraciones del admin
      */
     public function admin_init() {
-        register_setting('leads_lts_settings', 'leads_lts_phone_mappings');
+        // NO registrar leads_lts_phone_mappings aquí - se maneja via AJAX
         register_setting('leads_lts_settings', 'leads_lts_default_camphone');
         register_setting('leads_lts_settings', 'leads_lts_phone_selector');
         register_setting('leads_lts_settings', 'leads_lts_enable_debug');
