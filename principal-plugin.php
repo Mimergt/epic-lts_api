@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) {
 // Incluir backend si estamos en admin
 if (is_admin()) {
     require_once plugin_dir_path(__FILE__) . 'backend.php';
+    // Debug temporal - borrar después
+    require_once plugin_dir_path(__FILE__) . 'debug.php';
 }
 
 function add_custom_script() {
