@@ -6,16 +6,31 @@ Version: 4
 Author: Mimer - EPIC.GT
 */
 
+// Evitar acceso directo
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// Incluir backend si estamos en admin
+if (is_admin()) {
+    require_once plugin_dir_path(__FILE__) . 'backend.php';
+}
 
 function add_custom_script() {
     // Obtener la IP del cliente
     $userIP = $_SERVER['REMOTE_ADDR'];
+    
+    // Obtener mapeos de teléfonos desde la base de datos
+    $phone_mappings = get_option('leads_lts_phone_mappings', array());
+    $default_camphone = get_option('leads_lts_default_camphone', '5592509960');
 
     // Encolar el script y pasar la IP al frontend
     wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '1.0', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
+        'phone_mappings' => $phone_mappings, // Mapeos de teléfonos
+        'default_camphone' => $default_camphone // CamPhone por defecto
     ));
 }
 add_action('wp_enqueue_scripts', 'add_custom_script');
@@ -34,7 +49,7 @@ add_action('elementor_pro/forms/validation/tel', function($field, $record, $ajax
         $ajax_handler->add_error($field['id'], 'Por favor ingrese un número con exactamente 11 dígitos');
     } else {
         
-        function app4lead_mx_produccion( $record, $ajax_handler ){
+        function applts_mx_produccion( $record, $ajax_handler ){
             $form_settings = $record->get('form_settings');
             $form_id = $form_settings['form_id'];
             if( $form_id !== 'formdesk11' ){
@@ -112,7 +127,7 @@ add_action('elementor_pro/forms/validation/tel', function($field, $record, $ajax
 			
         }
 		
-        add_action('elementor_pro/forms/validation', 'app4lead_mx_produccion', 10, 2);
+        add_action('elementor_pro/forms/validation', 'applts_mx_produccion', 10, 2);
         
     }
 }, 9, 3);
