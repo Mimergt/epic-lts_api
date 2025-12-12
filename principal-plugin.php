@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS. Compatible con Contact Form 7.
-Version: 2.0.4
+Version: 2.1.0
 Author: Mimer - EPIC.GT
 */
 
@@ -311,23 +311,14 @@ function cf7_redirect_script()
             console.log('CF7: Evento wpcf7submit detectado');
             console.log('CF7: event.detail =', event.detail);
 
-            // Verificar si hay detail y status
             if (event.detail) {
                 console.log('CF7: event.detail.status =', event.detail.status);
-
-                // Redirigir si el status es mail_sent o si no hay errores de validación
-                if (event.detail.status === 'mail_sent' ||
-                    event.detail.status === 'sent' ||
-                    (!event.detail.status && !event.detail.apiResponse)) {
-                    console.log('CF7: Mail sent confirmado en wpcf7submit');
-                    redirectToGracias();
-                } else {
-                    console.log('CF7: No se redirige. Status:', event.detail.status);
-                }
-            } else {
-                console.log('CF7: event.detail no existe, ejecutando redirección de todas formas');
-                redirectToGracias();
             }
+
+            // Redirigir siempre, independientemente del status del mail
+            // El envío a la API de LTS ocurre antes y es lo importante
+            console.log('CF7: Ejecutando redirección (el dato ya se envió a la API)');
+            redirectToGracias();
         }, false);
 
         // Listener adicional usando jQuery si está disponible
