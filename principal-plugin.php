@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS. Compatible con Contact Form 7.
-Version: 2.1.0
+Version: 2.2.0
 Author: Mimer - EPIC.GT
 */
 
@@ -277,6 +277,20 @@ add_action('wp_footer', 'cf7_redirect_script');
 
 function cf7_redirect_script()
 {
+    // Obtener las páginas habilitadas desde la configuración
+    $enabled_pages = get_option('leads_lts_enabled_pages', array());
+
+    // Si no hay páginas configuradas, no cargar el script
+    if (empty($enabled_pages) || !is_array($enabled_pages)) {
+        return;
+    }
+
+    // Verificar si estamos en una página habilitada
+    $current_page_id = get_the_ID();
+    if (!in_array($current_page_id, $enabled_pages)) {
+        return;
+    }
+
     ?>
     <script type="text/javascript">
         console.log('CF7 Redirect Script Loaded');
@@ -288,8 +302,8 @@ function cf7_redirect_script()
             // Obtener la URL actual sin parámetros para page_ref
             var currentUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
 
-            // Construir URL de redirección
-            var redirectUrl = 'https://ivory-vulture-959197.hostingersite.com/gracias/?page_ref=' + encodeURIComponent(currentUrl);
+            // Construir URL de redirección RELATIVA
+            var redirectUrl = '/gracias/?page_ref=' + encodeURIComponent(currentUrl);
 
             console.log('CF7: Redirigiendo a:', redirectUrl);
 
