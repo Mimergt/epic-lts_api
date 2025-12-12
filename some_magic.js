@@ -249,3 +249,27 @@ jQuery(document).ready(function() {
         assignIPAddress();
     });
 });
+
+
+
+// Cambiar el número de teléfono en el header basado en el parámetro 'tel' de la URL
+jQuery(document).ready(function($) {
+    // Función para actualizar el teléfono en el header
+    function updatePhoneFromURL() {
+        // Obtener el parámetro 'tel' de la URL
+        var urlParams = new URLSearchParams(window.location.search);
+        var telParam = urlParams.get('tel');
+        
+        // Si existe el parámetro 'tel', actualizar el elemento
+        if (telParam) {
+            // Actualizar el href del enlace
+            $('.phone_head a').attr('href', 'tel:' + telParam);
+            
+            // Actualizar el texto visible del teléfono
+            $('.phone_head a').text(telParam);
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    updatePhoneFromURL();
+});
