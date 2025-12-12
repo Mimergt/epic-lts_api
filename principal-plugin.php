@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS.
-Version: 1.0.0
+Version: 1.0.1
 Author: Mimer - EPIC.GT
 */
 
