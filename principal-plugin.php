@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Leads to LTS API
-Description: Este plugin envía datos a LTS. Compatible con Elementor Pro y Contact Form 7.
-Version: 1.1.0
+Description: Este plugin envía datos a LTS. Compatible con Contact Form 7.
+Version: 2.0.0
 Author: Mimer - EPIC.GT
 */
 
@@ -39,105 +39,6 @@ function add_custom_script()
     ));
 }
 add_action('wp_enqueue_scripts', 'add_custom_script');
-
-
-
-add_action('elementor_pro/forms/validation/tel', function ($field, $record, $ajax_handler) {
-    // Custom validation
-    if (empty($field['value'])) {
-        return;
-    }
-
-    $tel_value = preg_replace('/\D/', '', $field['value']); // Eliminar caracteres no numéricos
-
-    if (strlen($tel_value) !== 10) {
-        $ajax_handler->add_error($field['id'], 'Por favor ingrese un número con exactamente 10 dígitos');
-    } else {
-
-        function applts_mx_produccion($record, $ajax_handler)
-        {
-            $form_settings = $record->get('form_settings');
-            $form_id = $form_settings['form_id'];
-            if ($form_id !== 'formdesk11') {
-                return;
-            }
-
-            // get fields using method in Form_Record class
-            $fields = $record->get('fields');
-            // get keyword from the phone
-            $phoneKey = $fields['tel']['value'];
-            $campaignid = $fields['campid']['value'];
-            $adgroupid = $fields['adgroupid']['value'];
-            $keyword = $fields['keyword']['value'];
-            $adId = $fields['adId']['value'];
-            $ref = $fields['ref']['value'];
-            $cPhone = $fields['camPhone']['value'];
-            $theName = $fields['nombre']['value'];
-            $theEmail = $fields['email']['value'];
-            $userIP = $_SERVER['REMOTE_ADDR']; // Obtener la IP del cliente
-            $CN = $fields['formid']['value'];
-
-            // Send POST request
-            $postData = array(
-                'phone' => $phoneKey,
-                'phone_campaign' => $cPhone,
-                'ip' => $userIP,
-                'name_client' => $theName,
-                'lead_state' => '',
-                'ivr_state' => '',
-                'sale_date' => '',
-                'channel' => '',
-                'campaign' => $campaignid,
-                'origin' => $ref,
-                'form_name' => $CN,
-                'origin_ad_fb' => '',
-                'origin_keyword_google' => $keyword,
-                'talktime' => '',
-                'client' => '',
-            );
-
-
-            $curl = curl_init();
-            $token = '1|5xIXarWJw6IBROh10ofp9rQx6pRtNAIAG3qNU6vo762c1ae7';
-            curl_setopt_array($curl, array(
-                #                CURLOPT_URL => 'https://qa-lts.exponentedigital.mx/api/v1/leads/create',
-                CURLOPT_URL => 'https://lts.exponentedigital.mx/api/v1/leads/create',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode($postData),
-                CURLOPT_HTTPHEADER => array(
-                    'Accept: application/json',
-                    'Authorization: Bearer ' . $token,
-                    'Content-Type: application/json'
-                ),
-            ));
-
-            $response = curl_exec($curl);
-            $url = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
-
-            // Log de API (si está activado)
-            if (get_option('leads_lts_enable_api_log', '0') == '1') {
-                file_put_contents(plugin_dir_path(__FILE__) . 'log.txt', "Response: " . $response . "\nPhone Campaign: " . $postData['phone_campaign'] . "\nCampaign ID: " . $postData['campaignid'] . "\nOrigen URL: " . $postData['referer'] . "\nEnd URL: " . $url . "\nName: " . $postData['name'] . "\nEmail: " . $postData['email'] . "\nUser IP: " . $postData['ip'] . "\nFormulario: " . $postData['CN'] . "\nPhone: " . $postData['phone'] . "\n\n", FILE_APPEND);
-            }
-            curl_close($curl);
-
-            // Set redirect URL	
-            $redirect_url = site_url('/gracias/?page_ref=' . $ref);
-            // o $redirect_url = home_url('/gracias/?page_ref=' . $ref);
-            $ajax_handler->add_response_data('redirect_url', $redirect_url);
-
-
-        }
-
-        add_action('elementor_pro/forms/validation', 'applts_mx_produccion', 10, 2);
-
-    }
-}, 9, 3);
 
 
 
@@ -352,19 +253,41 @@ function send_cf7_data_to_lts_api($contact_form)
 }
 
 // Agregar redirección después del envío exitoso de Contact Form 7
-add_action('wpcf7_mail_sent', 'cf7_redirect_to_gracias');
+add_filter('wpcf7_feedback_response', 'cf7_redirect_to_gracias', 10, 2);
 
-function cf7_redirect_to_gracias($contact_form)
+function cf7_redirect_to_gracias($response, $result)
 {
-    // Obtener la URL de referencia
-    $ref = isset($_SERVER['HTTP_REFERER']) ? esc_url($_SERVER['HTTP_REFERER']) : '';
+    // Solo redirigir si el envío fue exitoso
+    if ($result['status'] === 'mail_sent') {
+        // Obtener la URL actual de la página desde donde se envió el formulario
+        $current_url = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
 
-    // Construir URL de redirección
-    $redirect_url = site_url('/gracias/?page_ref=' . urlencode($ref));
+        // Construir URL de redirección
+        $redirect_url = 'https://ivory-vulture-959197.hostingersite.com/gracias/?page_ref=' . urlencode($current_url);
 
-    // Usar JavaScript para redirigir (ya que CF7 usa AJAX)
-    echo '<script type="text/javascript">
-        window.location.href = "' . $redirect_url . '";
-    </script>';
+        // Agregar script de redirección a la respuesta
+        $response['redirect'] = $redirect_url;
+    }
+
+    return $response;
+}
+
+// Agregar JavaScript para manejar la redirección en el footer
+add_action('wp_footer', 'cf7_redirect_script');
+
+function cf7_redirect_script()
+{
+    ?>
+    <script type="text/javascript">
+        document.addEventListener('wpcf7mailsent', function (event) {
+            // Obtener la URL actual para el parámetro page_ref
+            var currentUrl = window.location.href;
+            var redirectUrl = 'https://ivory-vulture-959197.hostingersite.com/gracias/?page_ref=' + encodeURIComponent(currentUrl);
+
+            // Redirigir
+            window.location.href = redirectUrl;
+        }, false);
+    </script>
+    <?php
 }
 
