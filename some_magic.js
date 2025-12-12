@@ -260,16 +260,42 @@ jQuery(document).ready(function($) {
         var urlParams = new URLSearchParams(window.location.search);
         var telParam = urlParams.get('tel');
         
+        console.log('=== UPDATE PHONE FROM URL ===');
+        console.log('Tel param from URL:', telParam);
+        console.log('.phone_head a elements found:', $('.phone_head a').length);
+        
         // Si existe el parámetro 'tel', actualizar el elemento
         if (telParam) {
-            // Actualizar el href del enlace
-            $('.phone_head a').attr('href', 'tel:' + telParam);
+            var $phoneElement = $('.phone_head a');
             
-            // Actualizar el texto visible del teléfono
-            $('.phone_head a').text(telParam);
+            if ($phoneElement.length > 0) {
+                console.log('Original href:', $phoneElement.attr('href'));
+                console.log('Original text:', $phoneElement.text());
+                
+                // Actualizar el href del enlace
+                $phoneElement.attr('href', 'tel:' + telParam);
+                
+                // Actualizar el texto visible del teléfono
+                $phoneElement.text(telParam);
+                
+                console.log('New href:', $phoneElement.attr('href'));
+                console.log('New text:', $phoneElement.text());
+                console.log('✅ Phone updated successfully');
+            } else {
+                console.log('⚠️ Element .phone_head a not found');
+            }
+        } else {
+            console.log('ℹ️ No tel parameter in URL');
         }
+        console.log('=== END UPDATE PHONE ===');
     }
     
     // Ejecutar al cargar la página
     updatePhoneFromURL();
+    
+    // Intentar nuevamente después de 500ms por si el elemento se carga tarde
+    setTimeout(updatePhoneFromURL, 500);
+    
+    // Y una vez más después de 1 segundo
+    setTimeout(updatePhoneFromURL, 1000);
 });
