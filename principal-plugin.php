@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Leads to LTS API
-Description: Este plugin envía datos a LTS.
-Version: 1.0.1
+Description: Este plugin envía datos a LTS. Compatible con Elementor Pro y Contact Form 7.
+Version: 1.1.0
 Author: Mimer - EPIC.GT
 */
 
@@ -193,3 +193,178 @@ function device_shortcode()
     return detect_device();
 }
 add_shortcode('device', 'device_shortcode');
+
+
+// ==========================================
+// COMPATIBILIDAD CON CONTACT FORM 7
+// ==========================================
+
+// Validación del campo de teléfono en Contact Form 7
+add_filter('wpcf7_validate_tel', 'custom_cf7_phone_validation', 10, 2);
+add_filter('wpcf7_validate_tel*', 'custom_cf7_phone_validation', 10, 2);
+
+function custom_cf7_phone_validation($result, $tag)
+{
+    $name = $tag->name;
+    $value = isset($_POST[$name]) ? trim($_POST[$name]) : '';
+
+    if ($value) {
+        $tel_value = preg_replace('/\D/', '', $value); // Eliminar caracteres no numéricos
+
+        if (strlen($tel_value) !== 10) {
+            $result->invalidate($tag, 'Por favor ingrese un número con exactamente 10 dígitos');
+        }
+    }
+
+    return $result;
+}
+
+// Hook para procesar el formulario después del envío
+add_action('wpcf7_before_send_mail', 'send_cf7_data_to_lts_api');
+
+function send_cf7_data_to_lts_api($contact_form)
+{
+    // Obtener el ID del formulario
+    $form_id = $contact_form->id();
+
+    // Obtener los datos enviados
+    $submission = WPCF7_Submission::get_instance();
+
+    if (!$submission) {
+        return;
+    }
+
+    $posted_data = $submission->get_posted_data();
+
+    // Buscar el campo de teléfono (puede tener diferentes nombres como tel-341, tel, phone, etc.)
+    $phone = '';
+    foreach ($posted_data as $key => $value) {
+        if (strpos($key, 'tel') !== false || strpos($key, 'phone') !== false) {
+            $phone = preg_replace('/\D/', '', $value); // Limpiar el teléfono
+            break;
+        }
+    }
+
+    // Si no hay teléfono, no enviar
+    if (empty($phone)) {
+        return;
+    }
+
+    // Buscar otros campos comunes
+    $name = '';
+    foreach ($posted_data as $key => $value) {
+        if (strpos($key, 'nombre') !== false || strpos($key, 'name') !== false) {
+            $name = sanitize_text_field($value);
+            break;
+        }
+    }
+
+    $email = '';
+    foreach ($posted_data as $key => $value) {
+        if (strpos($key, 'email') !== false || strpos($key, 'correo') !== false) {
+            $email = sanitize_email($value);
+            break;
+        }
+    }
+
+    // Obtener datos de la URL
+    $ref = isset($_SERVER['HTTP_REFERER']) ? esc_url($_SERVER['HTTP_REFERER']) : '';
+    $userIP = $_SERVER['REMOTE_ADDR'];
+
+    // Obtener el camPhone de los parámetros URL o usar el default
+    $urlParams = array();
+    parse_str(parse_url($ref, PHP_URL_QUERY), $urlParams);
+
+    $phone_mappings = get_option('leads_lts_phone_mappings', array());
+    $default_camphone = get_option('leads_lts_default_camphone', '5592509960');
+    $phone_selector = get_option('leads_lts_phone_selector', '#call');
+
+    // Intentar obtener el camPhone desde los mapeos
+    $cPhone = $default_camphone;
+
+    // Obtener campaña y otros datos de URL si existen
+    $campaignid = isset($urlParams['campaignid']) ? $urlParams['campaignid'] : '';
+    $keyword = isset($urlParams['keyword']) ? $urlParams['keyword'] : '';
+    $adId = isset($urlParams['adid']) ? $urlParams['adid'] : '';
+
+    // Preparar datos para enviar a la API
+    $postData = array(
+        'phone' => $phone,
+        'phone_campaign' => $cPhone,
+        'ip' => $userIP,
+        'name_client' => $name,
+        'lead_state' => '',
+        'ivr_state' => '',
+        'sale_date' => '',
+        'channel' => 'Contact Form 7',
+        'campaign' => $campaignid,
+        'origin' => $ref,
+        'form_name' => 'CF7-' . $form_id,
+        'origin_ad_fb' => '',
+        'origin_keyword_google' => $keyword,
+        'talktime' => '',
+        'client' => '',
+    );
+
+    // Enviar a la API
+    $curl = curl_init();
+    $token = '1|5xIXarWJw6IBROh10ofp9rQx6pRtNAIAG3qNU6vo762c1ae7';
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://lts.exponentedigital.mx/api/v1/leads/create',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode($postData),
+        CURLOPT_HTTPHEADER => array(
+            'Accept: application/json',
+            'Authorization: Bearer ' . $token,
+            'Content-Type: application/json'
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    $url = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
+
+    // Log de API (si está activado)
+    if (get_option('leads_lts_enable_api_log', '0') == '1') {
+        $log_entry = "=== CONTACT FORM 7 SUBMISSION ===\n";
+        $log_entry .= "Form ID: " . $form_id . "\n";
+        $log_entry .= "Response: " . $response . "\n";
+        $log_entry .= "Phone: " . $postData['phone'] . "\n";
+        $log_entry .= "Phone Campaign: " . $postData['phone_campaign'] . "\n";
+        $log_entry .= "Name: " . $postData['name_client'] . "\n";
+        $log_entry .= "Email: " . $email . "\n";
+        $log_entry .= "User IP: " . $postData['ip'] . "\n";
+        $log_entry .= "Origin: " . $postData['origin'] . "\n";
+        $log_entry .= "Campaign ID: " . $postData['campaign'] . "\n";
+        $log_entry .= "Keyword: " . $postData['origin_keyword_google'] . "\n";
+        $log_entry .= "API URL: " . $url . "\n";
+        $log_entry .= "Timestamp: " . date('Y-m-d H:i:s') . "\n\n";
+
+        file_put_contents(plugin_dir_path(__FILE__) . 'log.txt', $log_entry, FILE_APPEND);
+    }
+
+    curl_close($curl);
+}
+
+// Agregar redirección después del envío exitoso de Contact Form 7
+add_action('wpcf7_mail_sent', 'cf7_redirect_to_gracias');
+
+function cf7_redirect_to_gracias($contact_form)
+{
+    // Obtener la URL de referencia
+    $ref = isset($_SERVER['HTTP_REFERER']) ? esc_url($_SERVER['HTTP_REFERER']) : '';
+
+    // Construir URL de redirección
+    $redirect_url = site_url('/gracias/?page_ref=' . urlencode($ref));
+
+    // Usar JavaScript para redirigir (ya que CF7 usa AJAX)
+    echo '<script type="text/javascript">
+        window.location.href = "' . $redirect_url . '";
+    </script>';
+}
+
