@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS. Compatible con Contact Form 7.
-Version: 2.0.0
+Version: 2.0.1
 Author: Mimer - EPIC.GT
 */
 
@@ -100,25 +100,25 @@ add_shortcode('device', 'device_shortcode');
 // COMPATIBILIDAD CON CONTACT FORM 7
 // ==========================================
 
-// Validación del campo de teléfono en Contact Form 7
-add_filter('wpcf7_validate_tel', 'custom_cf7_phone_validation', 10, 2);
-add_filter('wpcf7_validate_tel*', 'custom_cf7_phone_validation', 10, 2);
+// Validación del campo de teléfono en Contact Form 7 (DESACTIVADA - BACKUP)
+// add_filter('wpcf7_validate_tel', 'custom_cf7_phone_validation', 10, 2);
+// add_filter('wpcf7_validate_tel*', 'custom_cf7_phone_validation', 10, 2);
 
-function custom_cf7_phone_validation($result, $tag)
-{
-    $name = $tag->name;
-    $value = isset($_POST[$name]) ? trim($_POST[$name]) : '';
-
-    if ($value) {
-        $tel_value = preg_replace('/\D/', '', $value); // Eliminar caracteres no numéricos
-
-        if (strlen($tel_value) !== 10) {
-            $result->invalidate($tag, 'Por favor ingrese un número con exactamente 10 dígitos');
-        }
-    }
-
-    return $result;
-}
+// function custom_cf7_phone_validation($result, $tag)
+// {
+//     $name = $tag->name;
+//     $value = isset($_POST[$name]) ? trim($_POST[$name]) : '';
+//
+//     if ($value) {
+//         $tel_value = preg_replace('/\D/', '', $value); // Eliminar caracteres no numéricos
+//
+//         if (strlen($tel_value) !== 10) {
+//             $result->invalidate($tag, 'Por favor ingrese un número con exactamente 10 dígitos');
+//         }
+//     }
+//
+//     return $result;
+// }
 
 // Hook para procesar el formulario después del envío
 add_action('wpcf7_before_send_mail', 'send_cf7_data_to_lts_api');
@@ -252,27 +252,27 @@ function send_cf7_data_to_lts_api($contact_form)
     curl_close($curl);
 }
 
-// Agregar redirección después del envío exitoso de Contact Form 7
-add_filter('wpcf7_feedback_response', 'cf7_redirect_to_gracias', 10, 2);
+// Comentar la redirección PHP, ahora se maneja con JavaScript
+// add_filter('wpcf7_feedback_response', 'cf7_redirect_to_gracias', 10, 2);
 
-function cf7_redirect_to_gracias($response, $result)
-{
-    // Solo redirigir si el envío fue exitoso
-    if ($result['status'] === 'mail_sent') {
-        // Obtener la URL actual de la página desde donde se envió el formulario
-        $current_url = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
+// function cf7_redirect_to_gracias($response, $result)
+// {
+//     // Solo redirigir si el envío fue exitoso
+//     if ($result['status'] === 'mail_sent') {
+//         // Obtener la URL actual de la página desde donde se envió el formulario
+//         $current_url = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
 
-        // Construir URL de redirección
-        $redirect_url = 'https://ivory-vulture-959197.hostingersite.com/gracias/?page_ref=' . urlencode($current_url);
+//         // Construir URL de redirección
+//         $redirect_url = 'https://ivory-vulture-959197.hostingersite.com/gracias/?page_ref=' . urlencode($current_url);
 
-        // Agregar script de redirección a la respuesta
-        $response['redirect'] = $redirect_url;
-    }
+//         // Agregar script de redirección a la respuesta
+//         $response['redirect'] = $redirect_url;
+//     }
 
-    return $response;
-}
+//     return $response;
+// }
 
-// Agregar JavaScript para manejar la redirección en el footer
+// Agregar JavaScript para manejar la redirección después del envío de CF7
 add_action('wp_footer', 'cf7_redirect_script');
 
 function cf7_redirect_script()
@@ -280,14 +280,19 @@ function cf7_redirect_script()
     ?>
     <script type="text/javascript">
         document.addEventListener('wpcf7mailsent', function (event) {
-            // Obtener la URL actual para el parámetro page_ref
-            var currentUrl = window.location.href;
+            // Obtener la URL actual sin parámetros para page_ref
+            var currentUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+
+            // Construir URL de redirección
             var redirectUrl = 'https://ivory-vulture-959197.hostingersite.com/gracias/?page_ref=' + encodeURIComponent(currentUrl);
 
-            // Redirigir
+            // Debug en consola
+            console.log('CF7: Formulario enviado exitosamente');
+            console.log('CF7: Redirigiendo a:', redirectUrl);
+
+            // Redirigir inmediatamente
             window.location.href = redirectUrl;
         }, false);
     </script>
     <?php
 }
-
