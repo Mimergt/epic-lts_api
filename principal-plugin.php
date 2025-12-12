@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS. Compatible con Contact Form 7.
-Version: 2.0.2
+Version: 2.0.3
 Author: Mimer - EPIC.GT
 */
 
@@ -279,8 +279,11 @@ function cf7_redirect_script()
 {
     ?>
     <script type="text/javascript">
-        document.addEventListener('wpcf7mailsent', function (event) {
-            console.log('CF7: Formulario enviado exitosamente');
+        console.log('CF7 Redirect Script Loaded');
+
+        // Función de redirección
+        function redirectToGracias() {
+            console.log('=== INICIANDO REDIRECCIÓN ===');
 
             // Obtener la URL actual sin parámetros para page_ref
             var currentUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
@@ -292,9 +295,40 @@ function cf7_redirect_script()
 
             // Esperar 1 segundo antes de redirigir
             setTimeout(function () {
+                console.log('CF7: Ejecutando redirección ahora...');
                 location = redirectUrl;
             }, 1000);
+        }
+
+        // Listener para wpcf7mailsent (versiones más recientes)
+        document.addEventListener('wpcf7mailsent', function (event) {
+            console.log('CF7: Evento wpcf7mailsent detectado');
+            redirectToGracias();
         }, false);
+
+        // Listener para wpcf7submit (versiones antiguas)
+        document.addEventListener('wpcf7submit', function (event) {
+            console.log('CF7: Evento wpcf7submit detectado');
+            if (event.detail.status === 'mail_sent') {
+                console.log('CF7: Mail sent confirmado en wpcf7submit');
+                redirectToGracias();
+            }
+        }, false);
+
+        // Listener adicional usando jQuery si está disponible
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document).on('mailsent.wpcf7', function (event) {
+                console.log('CF7: Evento mailsent.wpcf7 (jQuery) detectado');
+                redirectToGracias();
+            });
+
+            jQuery(document).on('wpcf7mailsent', function (event) {
+                console.log('CF7: Evento wpcf7mailsent (jQuery) detectado');
+                redirectToGracias();
+            });
+        }
+
+        console.log('CF7: Todos los event listeners configurados');
     </script>
     <?php
 }
