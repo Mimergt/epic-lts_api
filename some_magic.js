@@ -23,9 +23,16 @@ jQuery(function($) {
   // Debug completo solo si está activado
   if (enableDebug) {
     console.log('=== LEADS LTS DEBUG ===');
-    console.log('Phone Selector:', phoneSelector);
+    console.log('🔍 PASO 1: Verificando URL');
+    console.log('Current URL:', window.location.href);
+    console.log('URL Search params:', window.location.search);
     console.log('Tel parameter from URL:', telFromUrl);
+    console.log('');
+    console.log('🔍 PASO 2: Verificando selector');
+    console.log('Phone Selector:', phoneSelector);
     console.log('Original Phone from selector:', camPhone);
+    console.log('');
+    console.log('🔍 PASO 3: Configuración de mapeos');
     console.log('Phone Mappings from DB:', phoneMap);
     console.log('Default CamPhone:', defaultCamPhone);
     
@@ -33,6 +40,7 @@ jQuery(function($) {
     if (!$(phoneSelector).length) {
       console.log('⚠️ Elemento con selector', phoneSelector, 'no encontrado');
     }
+    console.log('');
   }
 
   // Calcular el valor una sola vez
@@ -42,11 +50,22 @@ jQuery(function($) {
   if (telFromUrl && phoneMap[telFromUrl]) {
     finalMappedValue = phoneMap[telFromUrl];
     if (enableDebug) {
-      console.log('✅ Usando tel de URL (encontrado en mapeos):', telFromUrl, '->', finalMappedValue);
+      console.log('🎯 DECISIÓN: Usando tel de URL');
+      console.log('✅ Tel de URL encontrado en mapeos:', telFromUrl, '->', finalMappedValue);
     }
   } 
   // PRIORIDAD 2: Buscar el teléfono del selector en los mapeos
   else {
+    if (enableDebug) {
+      console.log('🎯 DECISIÓN: Tel de URL no disponible o no está en mapeos');
+      if (telFromUrl) {
+        console.log('⚠️ Tel de URL existe pero NO está en mapeos:', telFromUrl);
+        console.log('💡 Verifica que el número esté agregado en el admin de WordPress');
+      } else {
+        console.log('ℹ️ No hay parámetro tel en la URL');
+      }
+    }
+    
     var phoneToCheck = camPhone;
     var phoneWithoutTel = camPhone ? camPhone.replace('tel:', '') : '';
     
@@ -77,6 +96,8 @@ jQuery(function($) {
   }
   
   if (enableDebug) {
+    console.log('');
+    console.log('🏁 RESULTADO FINAL');
     console.log('Final mapped value:', finalMappedValue);
     console.log('=== END DEBUG ===');
   }
