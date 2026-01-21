@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Leads to LTS API
-Description: Este plugin envía datos a LTS. Compatible con Contact Form 7.
-Version: 2.2.0
+Description: Este plugin envía datos a LTS para Grupo Alega. Compatible con Contact Form 7.
+Version: 2.2.1
 Author: Mimer - EPIC.GT
 */
 
