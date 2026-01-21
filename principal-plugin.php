@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Este plugin envía datos a LTS para Grupo Alega. Compatible con Contact Form 7.
-Version: 2.2.2
+Version: 2.2.3
 Author: Mimer - EPIC.GT
 */
 
@@ -172,7 +172,7 @@ function send_cf7_data_to_lts_api($contact_form)
     $ref = isset($_SERVER['HTTP_REFERER']) ? esc_url($_SERVER['HTTP_REFERER']) : '';
     $userIP = $_SERVER['REMOTE_ADDR'];
 
-    // Obtener el camPhone de los parámetros URL o usar el default
+    // Obtener parámetros de la URL
     $urlParams = array();
     parse_str(parse_url($ref, PHP_URL_QUERY), $urlParams);
 
@@ -180,8 +180,28 @@ function send_cf7_data_to_lts_api($contact_form)
     $default_camphone = get_option('leads_lts_default_camphone', '5592509960');
     $phone_selector = get_option('leads_lts_phone_selector', '#call');
 
-    // Intentar obtener el camPhone desde los mapeos
-    $cPhone = $default_camphone;
+    // PRIORIDAD 1: Intentar obtener camPhone del formulario enviado
+    $cPhone = '';
+    foreach ($posted_data as $key => $value) {
+        if (strpos($key, 'camPhone') !== false) {
+            $cPhone = sanitize_text_field($value);
+            break;
+        }
+    }
+
+    // PRIORIDAD 2: Si no hay camPhone en el formulario, intentar con parámetro tel de URL
+    if (empty($cPhone) && isset($urlParams['tel'])) {
+        $tel_from_url = sanitize_text_field($urlParams['tel']);
+        // Verificar si está en los mapeos
+        if (isset($phone_mappings[$tel_from_url])) {
+            $cPhone = $phone_mappings[$tel_from_url];
+        }
+    }
+
+    // PRIORIDAD 3: Si aún no hay valor, usar default
+    if (empty($cPhone)) {
+        $cPhone = $default_camphone;
+    }
 
     // Obtener campaña y otros datos de URL si existen
     $campaignid = isset($urlParams['campaignid']) ? $urlParams['campaignid'] : '';
