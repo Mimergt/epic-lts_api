@@ -10,4 +10,29 @@ Origin: https://ivory-vulture-959197.hostingersite.com/reclamar-gastos-hipoteca/
 Campaign ID:
 Keyword:
 API URL: https://lts.exponentedigital.mx/api/v1/leads/create
-Timestamp: 2026-01-21 20:11:53
+Timestamp: 2026-01-21 20:11:53=== CONTACT FORM 7 SUBMISSION ===
+Form ID: 131
+Response: {"status":"success","message":"Success","data":{"lead":{"phone":"987654321","campaign":"SEM-Hipotecas PC","campaign_name":"SEM-Hipotecas PC","ivr_state":"Transferido","lead_state":null,"channel":103,"origin":"https:\/\/ivory-vulture-959197.hostingersite.com\/reclamar-gastos-hipoteca\/?v=2&tel=919899222","client":114,"request":"{\"phone\":\"0987654321\",\"phone_campaign\":\"919899189\",\"ip\":\"2800:98:1112:1f4d:9518:a91c:b1b3:decd\",\"name_client\":null,\"lead_state\":null,\"ivr_state\":null,\"sale_date\":null,\"channel\":\"Contact Form 7\",\"campaign\":null,\"origin\":\"https:\/\/ivory-vulture-959197.hostingersite.com\/reclamar-gastos-hipoteca\/?v=2&tel=919899222\",\"form_name\":\"CF7-131\",\"origin_ad_fb\":null,\"origin_keyword_google\":null,\"talktime\":null,\"client\":null}","origin_keyword_google":null,"adset_id":null,"adset_name":null,"created_at":"2026-01-21T20:23:32.000000Z","updated_at":"2026-01-21T20:23:32.000000Z","id":650565,"duplicado":false,"campaign_relation":{"id":982,"name":"SEM-Hipotecas PC","id_campaign":"SEM-Hipotecas PC","channel_id":103,"subchannel_id":54,"client_id":114,"numbering_id":304,"skilldata":"ALEGA_C2C_MOTOR","idload":4,"delay":60,"deleted_at":null,"created_at":"2025-12-15T18:47:55.000000Z","updated_at":"2025-12-19T15:25:56.000000Z","require_sms":null,"body_sms":null},"client_relation":{"id":114,"nombre":"Grupo Alega","clave_google_ads":"1674795503","tabla_venta":null,"country_id":"ES","deleted_at":null,"created_at":"2025-12-11T17:35:08.000000Z","updated_at":"2025-12-12T17:18:51.000000Z","days_to_duplicate":14}}}}
+Phone: 0987654321
+Phone Campaign: 919899189
+Name:
+Email:
+User IP: 2800:98:1112:1f4d:9518:a91c:b1b3:decd
+Origin: https://ivory-vulture-959197.hostingersite.com/reclamar-gastos-hipoteca/?v=2&tel=919899222
+Campaign ID:
+Keyword:
+API URL: https://lts.exponentedigital.mx/api/v1/leads/create
+Timestamp: 2026-01-21 20:23:33
+=== CONTACT FORM 7 SUBMISSION ===
+Form ID: 131
+Response: {"status":"success","message":"Success","data":{"lead":{"phone":"123456789","campaign":"SEM-Hipotecas PC","campaign_name":"SEM-Hipotecas PC","ivr_state":"Transferido","lead_state":null,"channel":103,"origin":"https:\/\/ivory-vulture-959197.hostingersite.com\/reclamar-gastos-hipoteca\/?v=2&tel=919899222","client":114,"request":"{\"phone\":\"1123456789\",\"phone_campaign\":\"919899189\",\"ip\":\"2800:98:1112:1f4d:9518:a91c:b1b3:decd\",\"name_client\":null,\"lead_state\":null,\"ivr_state\":null,\"sale_date\":null,\"channel\":\"Contact Form 7\",\"campaign\":null,\"origin\":\"https:\/\/ivory-vulture-959197.hostingersite.com\/reclamar-gastos-hipoteca\/?v=2&tel=919899222\",\"form_name\":\"CF7-131\",\"origin_ad_fb\":null,\"origin_keyword_google\":null,\"talktime\":null,\"client\":null}","origin_keyword_google":null,"adset_id":null,"adset_name":null,"created_at":"2026-01-21T20:24:57.000000Z","updated_at":"2026-01-21T20:24:57.000000Z","id":650580,"duplicado":false,"campaign_relation":{"id":982,"name":"SEM-Hipotecas PC","id_campaign":"SEM-Hipotecas PC","channel_id":103,"subchannel_id":54,"client_id":114,"numbering_id":304,"skilldata":"ALEGA_C2C_MOTOR","idload":4,"delay":60,"deleted_at":null,"created_at":"2025-12-15T18:47:55.000000Z","updated_at":"2025-12-19T15:25:56.000000Z","require_sms":null,"body_sms":null},"client_relation":{"id":114,"nombre":"Grupo Alega","clave_google_ads":"1674795503","tabla_venta":null,"country_id":"ES","deleted_at":null,"created_at":"2025-12-11T17:35:08.000000Z","updated_at":"2025-12-12T17:18:51.000000Z","days_to_duplicate":14}}}}
+Phone: 1123456789
+Phone Campaign: 919899189
+Name:
+Email:
+User IP: 2800:98:1112:1f4d:9518:a91c:b1b3:decd
+Origin: https://ivory-vulture-959197.hostingersite.com/reclamar-gastos-hipoteca/?v=2&tel=919899222
+Campaign ID:
+Keyword:
+API URL: https://lts.exponentedigital.mx/api/v1/leads/create
+Timestamp: 2026-01-21 20:24:58

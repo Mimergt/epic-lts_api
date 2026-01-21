@@ -102,8 +102,42 @@ jQuery(function($) {
     console.log('=== END DEBUG ===');
   }
 
-  // Asignar el valor calculado a todos los campos (sin logs adicionales)
-  $('input[name="form_fields[camPhone]"]').val(finalMappedValue);
+  // Asignar el valor calculado a TODOS los posibles campos camPhone
+  // Intentar múltiples selectores porque CF7 y Elementor usan formatos diferentes
+  var camPhoneFields = $(
+    'input[name="form_fields[camPhone]"], ' +
+    'input[name="camPhone"], ' +
+    'input[id="form-field-camPhone"], ' +
+    '#form-field-camPhone, ' +
+    '.elementor-field-type-hidden input[name*="camPhone"]'
+  );
+  
+  if (enableDebug) {
+    console.log('');
+    console.log('📝 ASIGNANDO VALOR A CAMPOS');
+    console.log('Campos camPhone encontrados:', camPhoneFields.length);
+    camPhoneFields.each(function(index) {
+      console.log('Campo ' + index + ':', {
+        name: $(this).attr('name'),
+        id: $(this).attr('id'),
+        currentValue: $(this).val()
+      });
+    });
+  }
+  
+  // Asignar el valor
+  camPhoneFields.val(finalMappedValue);
+  
+  if (enableDebug) {
+    console.log('✅ Valor asignado:', finalMappedValue);
+    console.log('Verificando asignación...');
+    camPhoneFields.each(function(index) {
+      console.log('Campo ' + index + ' después:', {
+        name: $(this).attr('name'),
+        newValue: $(this).val()
+      });
+    });
+  }
 });
 
 
