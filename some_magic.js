@@ -102,7 +102,41 @@ jQuery(function($) {
     console.log('=== END DEBUG ===');
   }
 
-  // Asignar el valor calculado a TODOS los posibles campos camPhone
+  // PASO 1: Buscar todos los formularios CF7 y crear campo camPhone si no existe
+  var cf7Forms = $('form.wpcf7-form');
+  
+  if (enableDebug) {
+    console.log('');
+    console.log('🔍 BUSCANDO FORMULARIOS CF7');
+    console.log('Formularios CF7 encontrados:', cf7Forms.length);
+  }
+  
+  // Crear campo oculto en cada formulario si no existe
+  cf7Forms.each(function(index) {
+    var $form = $(this);
+    var existingField = $form.find('input[name="camPhone"]');
+    
+    if (existingField.length === 0) {
+      // No existe, crear el campo
+      var hiddenField = $('<input>', {
+        type: 'hidden',
+        name: 'camPhone',
+        value: finalMappedValue,
+        class: 'wpcf7-form-control'
+      });
+      $form.append(hiddenField);
+      
+      if (enableDebug) {
+        console.log('✅ Campo camPhone creado en formulario', index);
+      }
+    } else {
+      if (enableDebug) {
+        console.log('ℹ️ Campo camPhone ya existe en formulario', index);
+      }
+    }
+  });
+
+  // PASO 2: Asignar el valor calculado a TODOS los posibles campos camPhone
   // Intentar múltiples selectores porque CF7 y Elementor usan formatos diferentes
   var camPhoneFields = $(
     'input[name="form_fields[camPhone]"], ' +
