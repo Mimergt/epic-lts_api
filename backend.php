@@ -420,14 +420,49 @@ class LeadsLTSAdmin {
      */
     public function form_errors_log_page() {
         ?>
+        <style>
+        .leads-lts-log-wrapper { max-width: 100%; margin: 0; }
+        .leads-lts-log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .leads-lts-log-controls { display: flex; gap: 10px; align-items: center; }
+        .leads-lts-log-status { display: flex; gap: 20px; font-size: 14px; }
+        .leads-lts-log-main { background: #1e1e1e; color: #ffffff; padding: 20px; border-radius: 8px; font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.4; min-height: 600px; max-height: 80vh; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #ddd; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .leads-lts-log-empty { color: #888; font-style: italic; text-align: center; padding: 40px; }
+        .leads-lts-log-entry { border-bottom: 1px solid #333; padding: 10px 0; margin-bottom: 10px; }
+        .leads-lts-log-entry:last-child { border-bottom: none; margin-bottom: 0; }
+        .log-error { color: #f44336; }
+        .log-warning { color: #FF9800; }
+        .log-info { color: #2196F3; }
+        </style>
+
         <div class="wrap leads-lts-log-wrapper">
             <h1>⚠️ Errores de Formularios Elementor</h1>
-            <p>Este log registra errores de validación y envío que no siempre aparecen en el log de API.</p>
 
-            <div class="leads-lts-log-controls" style="margin: 15px 0;">
-                <button type="button" id="refresh-form-errors-log" class="button button-secondary">🔄 Actualizar</button>
-                <a href="<?php echo admin_url('admin.php?page=leads-lts-log'); ?>" class="button button-secondary">📋 Ver Log API</a>
-                <a href="<?php echo admin_url('admin.php?page=leads-lts-admin'); ?>" class="button button-primary">⚙️ Configuración</a>
+            <div class="leads-lts-log-header">
+                <div class="leads-lts-log-status">
+                    <span><strong>Log Errores:</strong>
+                        <span style="color: green;">✅ Siempre activo</span>
+                    </span>
+                    <span><strong>Log API:</strong>
+                        <?php echo get_option('leads_lts_enable_api_log', '0') == '1' ?
+                            '<span style="color: green;">✅ Activado</span>' :
+                            '<span style="color: red;">❌ Desactivado</span>'; ?>
+                    </span>
+                </div>
+
+                <div class="leads-lts-log-controls">
+                    <button type="button" id="refresh-form-errors-log" class="button button-secondary">
+                        🔄 Actualizar
+                    </button>
+                    <button type="button" id="clear-form-errors-log" class="button button-secondary">
+                        🗑️ Limpiar Log
+                    </button>
+                    <a href="<?php echo admin_url('admin.php?page=leads-lts-log'); ?>" class="button button-secondary">
+                        📋 Ver Log API
+                    </a>
+                    <a href="<?php echo admin_url('admin.php?page=leads-lts-admin'); ?>" class="button button-primary">
+                        ⚙️ Configuración
+                    </a>
+                </div>
             </div>
 
             <div class="leads-lts-log-main" id="form-errors-log-content">
@@ -436,10 +471,14 @@ class LeadsLTSAdmin {
                 if (empty(trim($log_content)) || strpos($log_content, 'No se ha encontrado') !== false || strpos($log_content, 'está vacío') !== false) {
                     echo '<div class="leads-lts-log-empty">' . esc_html($log_content) . '</div>';
                 } else {
-                    echo '<pre style="margin:0; white-space:pre-wrap; color:#fff;">' . esc_html($log_content) . '</pre>';
+                    echo $this->format_form_errors_log_content($log_content);
                 }
                 ?>
             </div>
+
+            <p style="margin-top: 15px; color: #666; font-size: 13px;">
+                💡 <strong>Tip:</strong> Este log se genera automáticamente para errores de validación, datos faltantes y fallos de comunicación con la API.
+            </p>
         </div>
 
         <script>
@@ -447,9 +486,55 @@ class LeadsLTSAdmin {
             $('#refresh-form-errors-log').on('click', function() {
                 location.reload();
             });
+
+            $('#clear-form-errors-log').on('click', function() {
+                if (confirm('¿Estás seguro de que deseas limpiar todo el log de errores?')) {
+                    $.post(ajaxurl, {
+                        action: 'leads_lts_clear_log',
+                        nonce: '<?php echo wp_create_nonce('leads_lts_clear_log'); ?>'
+                    }, function(response) {
+                        if (response.success) {
+                            $('#form-errors-log-content').html('<div class="leads-lts-log-empty">Log limpiado correctamente.</div>');
+                        } else {
+                            alert('Error al limpiar el log.');
+                        }
+                    });
+                }
+            });
         });
         </script>
         <?php
+    }
+
+    /**
+     * Formatear contenido del log de errores de formulario
+     */
+    private function format_form_errors_log_content($content) {
+        if (empty($content)) {
+            return '<div class="leads-lts-log-empty">No hay contenido en el log</div>';
+        }
+
+        $lines = explode("\n", $content);
+        $lines = array_filter($lines);
+        $lines = array_reverse($lines);
+
+        $formatted = '';
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
+
+            $escaped = esc_html($line);
+
+            if (strpos($line, 'Error') !== false || strpos($line, 'error') !== false) {
+                $formatted .= '<div class="leads-lts-log-entry log-error">' . $escaped . '</div>';
+            } elseif (strpos($line, 'fallback') !== false || strpos($line, 'incompleto') !== false) {
+                $formatted .= '<div class="leads-lts-log-entry log-warning">' . $escaped . '</div>';
+            } else {
+                $formatted .= '<div class="leads-lts-log-entry log-info">' . $escaped . '</div>';
+            }
+        }
+
+        return $formatted ?: '<div class="leads-lts-log-empty">No se pudieron formatear las entradas del log</div>';
     }
 
     /**
