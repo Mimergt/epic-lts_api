@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Plugin UIN para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 4.3.1
+Version: 4.3.2
 Author: Mimer - EPIC.GT
 */
 
@@ -43,7 +43,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.3.1', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.3.2', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
@@ -138,9 +138,26 @@ function applts_mx_produccion($record, $ajax_handler) {
     $CN = leads_lts_get_field_value($fields, 'formid');
     $userIP = leads_lts_get_client_ip();
 
-    if (empty($phoneKey) || empty($cPhone) || empty($campaignid)) {
+    // Si campaignid, keyword o adgroupid llegan vacíos desde el campo oculto,
+    // intentar extraerlos de los parámetros de la URL que viaja en el campo ref.
+    if (!empty($ref)) {
+        $ref_parts = parse_url($ref);
+        if (!empty($ref_parts['query'])) {
+            parse_str($ref_parts['query'], $url_params);
+            if (empty($campaignid) && !empty($url_params['campaignid'])) {
+                $campaignid = sanitize_text_field($url_params['campaignid']);
+                leads_lts_log_form_error('campid vacío en formulario, extraído de URL ref: ' . $campaignid . ' | form_id=' . $form_id);
+            }
+            if (empty($keyword) && !empty($url_params['keyword'])) {
+                $keyword = sanitize_text_field($url_params['keyword']);
+            }
+        }
+    }
+
+    // Solo phone y camPhone son estrictamente requeridos para procesar el lead.
+    if (empty($phoneKey) || empty($cPhone)) {
         leads_lts_log_form_error(
-            'Formulario incompleto | form_id=' . $form_id .
+            'Formulario incompleto - faltan campos criticos | form_id=' . $form_id .
             ' | phone=' . $phoneKey .
             ' | camPhone=' . $cPhone .
             ' | campaign=' . $campaignid .
