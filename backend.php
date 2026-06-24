@@ -40,6 +40,15 @@ class LeadsLTSAdmin {
             'leads-lts-log',
             array($this, 'log_page')
         );
+
+        add_submenu_page(
+            'leads-lts-admin',
+            'Errores Formularios',
+            'Errores Formularios',
+            'manage_options',
+            'leads-lts-form-errors-log',
+            array($this, 'form_errors_log_page')
+        );
     }
 
     /**
@@ -51,6 +60,7 @@ class LeadsLTSAdmin {
         register_setting('leads_lts_settings', 'leads_lts_phone_selector');
         register_setting('leads_lts_settings', 'leads_lts_enable_debug');
         register_setting('leads_lts_settings', 'leads_lts_enable_api_log');
+        register_setting('leads_lts_settings', 'leads_lts_api_token');
     }
 
     /**
@@ -78,6 +88,7 @@ class LeadsLTSAdmin {
         $phone_selector = get_option('leads_lts_phone_selector', '#call');
         $enable_debug = get_option('leads_lts_enable_debug', '0');
         $enable_api_log = get_option('leads_lts_enable_api_log', '0');
+        $api_token = get_option('leads_lts_api_token', '');
         ?>
         <div class="wrap">
             <h1>Configuración Leads to LTS API</h1>
@@ -121,6 +132,13 @@ class LeadsLTSAdmin {
                                             Activar log de llamadas a la API LTS
                                         </label>
                                         <p class="description">Guarda un registro detallado de todas las llamadas a la API LTS en <code>log.txt</code>.</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Token API LTS</th>
+                                    <td>
+                                        <input type="text" name="leads_lts_api_token" value="<?php echo esc_attr($api_token); ?>" class="regular-text" autocomplete="off" />
+                                        <p class="description">Si se deja vacío, el plugin usará el token fallback incluido en el código.</p>
                                     </td>
                                 </tr>
                             </table>
@@ -349,6 +367,9 @@ class LeadsLTSAdmin {
                     <a href="<?php echo admin_url('admin.php?page=leads-lts-admin'); ?>" class="button button-primary">
                         ⚙️ Configuración
                     </a>
+                    <a href="<?php echo admin_url('admin.php?page=leads-lts-form-errors-log'); ?>" class="button button-secondary">
+                        ⚠️ Errores Formulario
+                    </a>
                 </div>
             </div>
             
@@ -395,10 +416,47 @@ class LeadsLTSAdmin {
     }
 
     /**
+     * Página del log de errores de formularios Elementor
+     */
+    public function form_errors_log_page() {
+        ?>
+        <div class="wrap leads-lts-log-wrapper">
+            <h1>⚠️ Errores de Formularios Elementor</h1>
+            <p>Este log registra errores de validación y envío que no siempre aparecen en el log de API.</p>
+
+            <div class="leads-lts-log-controls" style="margin: 15px 0;">
+                <button type="button" id="refresh-form-errors-log" class="button button-secondary">🔄 Actualizar</button>
+                <a href="<?php echo admin_url('admin.php?page=leads-lts-log'); ?>" class="button button-secondary">📋 Ver Log API</a>
+                <a href="<?php echo admin_url('admin.php?page=leads-lts-admin'); ?>" class="button button-primary">⚙️ Configuración</a>
+            </div>
+
+            <div class="leads-lts-log-main" id="form-errors-log-content">
+                <?php
+                $log_content = $this->get_form_errors_log_content();
+                if (empty(trim($log_content)) || strpos($log_content, 'No se ha encontrado') !== false || strpos($log_content, 'está vacío') !== false) {
+                    echo '<div class="leads-lts-log-empty">' . esc_html($log_content) . '</div>';
+                } else {
+                    echo '<pre style="margin:0; white-space:pre-wrap; color:#fff;">' . esc_html($log_content) . '</pre>';
+                }
+                ?>
+            </div>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            $('#refresh-form-errors-log').on('click', function() {
+                location.reload();
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
      * Obtener contenido del log de API
      */
     private function get_api_log_content() {
-        $log_file = plugin_dir_path(__FILE__) . 'log.txt';
+        $log_file = plugin_dir_path(__FILE__) . LEADS_LTS_API_LOG_FILE;
         
         if (!file_exists($log_file)) {
             return "No se ha encontrado el archivo de log. El log se creará automáticamente cuando se realicen llamadas a la API (si está activado).";
@@ -415,6 +473,29 @@ class LeadsLTSAdmin {
         $lines = array_filter($lines); // Remover líneas vacías
         $lines = array_slice($lines, -50); // Últimas 50 líneas
         
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Obtener contenido del log de errores de formulario
+     */
+    private function get_form_errors_log_content() {
+        $log_file = plugin_dir_path(__FILE__) . LEADS_LTS_FORM_ERROR_LOG_FILE;
+
+        if (!file_exists($log_file)) {
+            return "No se ha encontrado el archivo de log de errores de formulario.";
+        }
+
+        $content = file_get_contents($log_file);
+
+        if (empty($content)) {
+            return "El log de errores de formulario está vacío.";
+        }
+
+        $lines = explode("\n", $content);
+        $lines = array_filter($lines);
+        $lines = array_slice($lines, -200);
+
         return implode("\n", $lines);
     }
 
@@ -516,6 +597,7 @@ class LeadsLTSAdmin {
 
         $api_log_file = plugin_dir_path(__FILE__) . 'log.txt';
         $debug_log_file = plugin_dir_path(__FILE__) . 'leads_lts_log.txt';
+        $form_error_log_file = plugin_dir_path(__FILE__) . LEADS_LTS_FORM_ERROR_LOG_FILE;
         
         // Limpiar log de API
         if (file_exists($api_log_file)) {
@@ -525,6 +607,10 @@ class LeadsLTSAdmin {
         // Limpiar log de debug
         if (file_exists($debug_log_file)) {
             unlink($debug_log_file);
+        }
+
+        if (file_exists($form_error_log_file)) {
+            unlink($form_error_log_file);
         }
         
         wp_send_json_success('Logs limpiados correctamente');

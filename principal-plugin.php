@@ -1,14 +1,30 @@
 <?php
 /*
 Plugin Name: Leads to LTS API
-Description: Este plugin envía datos a LTS y redirige a una página de gracias.
-Version: 4.2.2
+Description: Plugin UIN para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
+Version: 4.3.0
 Author: Mimer - EPIC.GT
 */
 
 // Evitar acceso directo
 if (!defined('ABSPATH')) {
     exit;
+}
+
+if (!defined('LEADS_LTS_API_LOG_FILE')) {
+    define('LEADS_LTS_API_LOG_FILE', 'log.txt');
+}
+
+if (!defined('LEADS_LTS_FORM_ERROR_LOG_FILE')) {
+    define('LEADS_LTS_FORM_ERROR_LOG_FILE', 'elementor_form_errors_log.txt');
+}
+
+if (!defined('LEADS_LTS_API_ENDPOINT')) {
+    define('LEADS_LTS_API_ENDPOINT', 'https://lts.exponentedigital.mx/api/v1/leads/create');
+}
+
+if (!defined('LEADS_LTS_FALLBACK_TOKEN')) {
+    define('LEADS_LTS_FALLBACK_TOKEN', '1|5xIXarWJw6IBROh10ofp9rQx6pRtNAIAG3qNU6vo762c1ae7');
 }
 
 // Incluir backend si estamos en admin
@@ -18,7 +34,7 @@ if (is_admin()) {
 
 function add_custom_script() {
     // Obtener la IP del cliente
-    $userIP = $_SERVER['REMOTE_ADDR'];
+    $userIP = leads_lts_get_client_ip();
     
     // Obtener mapeos de teléfonos desde la base de datos
     $phone_mappings = get_option('leads_lts_phone_mappings', array());
@@ -27,7 +43,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.2.2', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.3.0', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
@@ -38,6 +54,51 @@ function add_custom_script() {
     ));
 }
 add_action('wp_enqueue_scripts', 'add_custom_script');
+
+function leads_lts_get_client_ip() {
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $forwarded_ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        return trim($forwarded_ips[0]);
+    }
+
+    if (!empty($_SERVER['REMOTE_ADDR'])) {
+        return sanitize_text_field($_SERVER['REMOTE_ADDR']);
+    }
+
+    return '0.0.0.0';
+}
+
+function leads_lts_get_field_value($fields, $key) {
+    if (!isset($fields[$key]['value'])) {
+        return '';
+    }
+
+    return sanitize_text_field($fields[$key]['value']);
+}
+
+function leads_lts_write_line($filename, $message) {
+    $timestamp = date('Y-m-d H:i:s');
+    $line = '[' . $timestamp . '] ' . $message . PHP_EOL;
+    file_put_contents(plugin_dir_path(__FILE__) . $filename, $line, FILE_APPEND | LOCK_EX);
+}
+
+function leads_lts_log_api($message) {
+    if (get_option('leads_lts_enable_api_log', '0') !== '1') {
+        return;
+    }
+
+    leads_lts_write_line(LEADS_LTS_API_LOG_FILE, $message);
+}
+
+function leads_lts_log_form_error($message) {
+    leads_lts_write_line(LEADS_LTS_FORM_ERROR_LOG_FILE, $message);
+}
+
+function leads_lts_add_form_error_message($ajax_handler, $message) {
+    if (method_exists($ajax_handler, 'add_error_message')) {
+        $ajax_handler->add_error_message($message);
+    }
+}
 
 
 
@@ -50,92 +111,124 @@ add_action('elementor_pro/forms/validation/tel', function($field, $record, $ajax
     $tel_value = preg_replace('/\D/', '', $field['value']); // Eliminar caracteres no numéricos
     
     if (strlen($tel_value) !== 10) {
+        $form_settings = $record->get('form_settings');
+        $form_id = isset($form_settings['form_id']) ? $form_settings['form_id'] : 'sin_form_id';
+        leads_lts_log_form_error('Error validacion telefono | form_id=' . $form_id . ' | field_id=' . $field['id'] . ' | valor=' . sanitize_text_field($field['value']));
         $ajax_handler->add_error($field['id'], 'Por favor ingrese un número con exactamente 10 dígitos');
-    } else {
-        
-        function applts_mx_produccion( $record, $ajax_handler ){
-            $form_settings = $record->get('form_settings');
-            $form_id = $form_settings['form_id'];
-            if( $form_id !== 'formdesk11' ){
-                return;
-            }
-            
-            // get fields using method in Form_Record class
-            $fields = $record->get('fields');
-            // get keyword from the phone
-            $phoneKey = $fields['tel']['value'];
-            $campaignid = $fields['campid']['value'];
-            $adgroupid = $fields['adgroupid']['value'];
-            $keyword = $fields['keyword']['value'];
-            $adId = $fields['adId']['value'];
-            $ref = $fields['ref']['value'];
-            $cPhone = $fields['camPhone']['value'];
-            $theName = $fields['nombre']['value'];
-            $theEmail = $fields['email']['value'];
-			$userIP = $_SERVER['REMOTE_ADDR']; // Obtener la IP del cliente
-			$CN = $fields['formid']['value'];
-        
-            // Send POST request
-            $postData = array(
-                'phone' => $phoneKey,
-                'phone_campaign' => $cPhone,
-                'ip' => $userIP,
-				'name_client' => $theName,
-                'lead_state' => '',
-                'ivr_state' => '', 
-                'sale_date' => '',
-                'channel' => '',
-                'campaign' => $campaignid,
-                'origin' => $ref,
-				'form_name' => $CN,
-                'origin_ad_fb' => '',
-                'origin_keyword_google' => $keyword,
-                'talktime' => '',
-                'client' => '' ,
-            );
-        
-            
-              $curl = curl_init();
-            $token = '1|5xIXarWJw6IBROh10ofp9rQx6pRtNAIAG3qNU6vo762c1ae7';
-            curl_setopt_array($curl, array(
-#                CURLOPT_URL => 'https://qa-lts.exponentedigital.mx/api/v1/leads/create',
-				CURLOPT_URL => 'https://lts.exponentedigital.mx/api/v1/leads/create',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode($postData),
-                CURLOPT_HTTPHEADER => array(
-                    'Accept: application/json',
-                    'Authorization: Bearer ' . $token,
-                    'Content-Type: application/json'
-                ),
-            ));
-            
-            $response = curl_exec($curl);
-            $url = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
-        
-        // Log de API (si está activado)
-        if (get_option('leads_lts_enable_api_log', '0') == '1') {
-            file_put_contents( plugin_dir_path( __FILE__ ) . 'log.txt', "Response: " . $response . "\nPhone Campaign: " . $postData['phone_campaign'] . "\nCampaign ID: " . $postData['campaignid'] .  "\nOrigen URL: " . $postData['referer'] . "\nEnd URL: " . $url . "\nName: " . $postData['name'] .  "\nEmail: " . $postData['email'] . "\nUser IP: " . $postData['ip'] . "\nFormulario: " . $postData['CN'] . "\nPhone: " . $postData['phone'] . "\n\n", FILE_APPEND );
-        }
-        curl_close($curl);
-        
-        // Set redirect URL	
-		$redirect_url = site_url('/gracias/?page_ref=' . $ref);
-        // o $redirect_url = home_url('/gracias/?page_ref=' . $ref);
-        $ajax_handler->add_response_data('redirect_url', $redirect_url);
-			
-			
-        }
-		
-        add_action('elementor_pro/forms/validation', 'applts_mx_produccion', 10, 2);
-        
     }
 }, 9, 3);
+
+function applts_mx_produccion($record, $ajax_handler) {
+    $form_settings = $record->get('form_settings');
+    $form_id = isset($form_settings['form_id']) ? $form_settings['form_id'] : '';
+
+    if ($form_id !== 'formdesk11') {
+        return;
+    }
+
+    $fields = $record->get('fields');
+
+    $phoneKey = leads_lts_get_field_value($fields, 'tel');
+    $campaignid = leads_lts_get_field_value($fields, 'campid');
+    $keyword = leads_lts_get_field_value($fields, 'keyword');
+    $ref = leads_lts_get_field_value($fields, 'ref');
+    $cPhone = leads_lts_get_field_value($fields, 'camPhone');
+    $theName = leads_lts_get_field_value($fields, 'nombre');
+    $theEmail = leads_lts_get_field_value($fields, 'email');
+    $CN = leads_lts_get_field_value($fields, 'formid');
+    $userIP = leads_lts_get_client_ip();
+
+    if (empty($phoneKey) || empty($cPhone) || empty($campaignid)) {
+        leads_lts_log_form_error(
+            'Formulario incompleto | form_id=' . $form_id .
+            ' | phone=' . $phoneKey .
+            ' | camPhone=' . $cPhone .
+            ' | campaign=' . $campaignid .
+            ' | ref=' . $ref
+        );
+        leads_lts_add_form_error_message($ajax_handler, 'No se pudo procesar el formulario. Faltan datos requeridos.');
+        return;
+    }
+
+    $postData = array(
+        'phone' => $phoneKey,
+        'phone_campaign' => $cPhone,
+        'ip' => $userIP,
+        'name_client' => $theName,
+        'email_client' => $theEmail,
+        'lead_state' => '',
+        'ivr_state' => '',
+        'sale_date' => '',
+        'channel' => '',
+        'campaign' => $campaignid,
+        'origin' => $ref,
+        'form_name' => $CN,
+        'origin_ad_fb' => '',
+        'origin_keyword_google' => $keyword,
+        'talktime' => '',
+        'client' => '',
+    );
+
+    $token = get_option('leads_lts_api_token', '');
+    if (empty($token)) {
+        $token = LEADS_LTS_FALLBACK_TOKEN;
+        leads_lts_log_form_error('Token API no configurado en admin. Usando token fallback para form_id=' . $form_id);
+    }
+
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => LEADS_LTS_API_ENDPOINT,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => wp_json_encode($postData),
+        CURLOPT_HTTPHEADER => array(
+            'Accept: application/json',
+            'Authorization: Bearer ' . $token,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    $curl_error = curl_error($curl);
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $url = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
+    curl_close($curl);
+
+    if (!empty($curl_error)) {
+        leads_lts_log_form_error('Error cURL envio LTS | form_id=' . $form_id . ' | error=' . $curl_error . ' | phone=' . $phoneKey);
+        leads_lts_add_form_error_message($ajax_handler, 'No se pudo enviar la información en este momento. Intenta nuevamente.');
+        return;
+    }
+
+    if ((int) $http_code >= 400) {
+        leads_lts_log_form_error('Error API LTS | form_id=' . $form_id . ' | http_code=' . $http_code . ' | response=' . sanitize_text_field((string) $response));
+        leads_lts_add_form_error_message($ajax_handler, 'Hubo un problema al procesar tu información.');
+        return;
+    }
+
+    leads_lts_log_api(
+        'Response: ' . sanitize_text_field((string) $response) .
+        ' | Phone Campaign: ' . $postData['phone_campaign'] .
+        ' | Campaign ID: ' . $postData['campaign'] .
+        ' | Origen URL: ' . $postData['origin'] .
+        ' | End URL: ' . $url .
+        ' | Name: ' . $postData['name_client'] .
+        ' | Email: ' . $postData['email_client'] .
+        ' | User IP: ' . $postData['ip'] .
+        ' | Formulario: ' . $postData['form_name'] .
+        ' | Phone: ' . $postData['phone']
+    );
+
+    $redirect_url = site_url('/gracias/?page_ref=' . rawurlencode($ref));
+    $ajax_handler->add_response_data('redirect_url', $redirect_url);
+}
+
+add_action('elementor_pro/forms/validation', 'applts_mx_produccion', 10, 2);
 
 
 
