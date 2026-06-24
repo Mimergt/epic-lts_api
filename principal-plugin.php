@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Plugin UIN para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 4.3.2
+Version: 4.3.3
 Author: Mimer - EPIC.GT
 */
 
@@ -43,7 +43,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.3.2', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.3.3', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
@@ -146,7 +146,7 @@ function applts_mx_produccion($record, $ajax_handler) {
             parse_str($ref_parts['query'], $url_params);
             if (empty($campaignid) && !empty($url_params['campaignid'])) {
                 $campaignid = sanitize_text_field($url_params['campaignid']);
-                leads_lts_log_form_error('campid vacío en formulario, extraído de URL ref: ' . $campaignid . ' | form_id=' . $form_id);
+                leads_lts_log_form_error('[INFO] campid no llegó en campo oculto del formulario; recuperado de URL ref correctamente: ' . $campaignid . ' | form_id=' . $form_id . ' | Accion: ninguna, lead se procesa normal.');
             }
             if (empty($keyword) && !empty($url_params['keyword'])) {
                 $keyword = sanitize_text_field($url_params['keyword']);
