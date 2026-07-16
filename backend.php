@@ -568,7 +568,8 @@ class LeadsLTSAdmin {
         $log_file = plugin_dir_path(__FILE__) . LEADS_LTS_FORM_ERROR_LOG_FILE;
 
         if (!file_exists($log_file)) {
-            return "No se ha encontrado el archivo de log de errores de formulario.";
+            file_put_contents($log_file, '');
+            return "El log de errores de formulario está vacío.";
         }
 
         $content = file_get_contents($log_file);
@@ -680,23 +681,14 @@ class LeadsLTSAdmin {
             return;
         }
 
-        $api_log_file = plugin_dir_path(__FILE__) . 'log.txt';
+        $api_log_file = plugin_dir_path(__FILE__) . LEADS_LTS_API_LOG_FILE;
         $debug_log_file = plugin_dir_path(__FILE__) . 'leads_lts_log.txt';
         $form_error_log_file = plugin_dir_path(__FILE__) . LEADS_LTS_FORM_ERROR_LOG_FILE;
-        
-        // Limpiar log de API
-        if (file_exists($api_log_file)) {
-            unlink($api_log_file);
-        }
-        
-        // Limpiar log de debug
-        if (file_exists($debug_log_file)) {
-            unlink($debug_log_file);
-        }
 
-        if (file_exists($form_error_log_file)) {
-            unlink($form_error_log_file);
-        }
+        // Limpiar contenido de logs sin eliminar archivos
+        file_put_contents($api_log_file, '');
+        file_put_contents($debug_log_file, '');
+        file_put_contents($form_error_log_file, '');
         
         wp_send_json_success('Logs limpiados correctamente');
     }
