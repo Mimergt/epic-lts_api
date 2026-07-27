@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Versión BRAVO MX para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 5.0.2
+Version: 5.0.3
 Author: Mimer - EPIC.GT
 */
 
@@ -43,7 +43,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '5.0.2', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '5.0.3', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario

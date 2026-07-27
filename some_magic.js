@@ -110,6 +110,13 @@ jQuery(document).ready(function() {
         }
     }
 
+    // Función para eliminar números del campo de nombre completo en tiempo real
+    function eliminarNumerosNombre() {
+        jQuery("input[name='form_fields[nombre_completo]'], form [id='form-field-nombre_completo']").on('input', function() {
+            this.value = this.value.replace(/\d/g, '');
+        });
+    }
+
     // Función para validar el campo de teléfono
     function validarTelefono() {
         jQuery("input[name='form_fields[tel]'], form [id='form-field-tel']").each(function() {
@@ -130,6 +137,9 @@ jQuery(document).ready(function() {
 
         // Interceptar el evento keypress para el campo de teléfono
         jQuery("input[name='form_fields[tel]'], form [id='form-field-tel']").on('keypress', permitirNumeros);
+
+        // Eliminar números en tiempo real del campo nombre completo
+        eliminarNumerosNombre();
 
         // Validar el campo de teléfono
         validarTelefono();
