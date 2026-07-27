@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Versión BRAVO MX para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 5.0.0
+Version: 5.0.1
 Author: Mimer - EPIC.GT
 */
 
@@ -43,7 +43,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '4.3.4', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '5.0.1', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
@@ -147,6 +147,23 @@ function leads_lts_add_form_error_message($ajax_handler, $message) {
 }
 
 
+
+add_action('elementor_pro/forms/validation/text', function($field, $record, $ajax_handler) {
+    if (empty($field['value'])) {
+        return;
+    }
+
+    if (!isset($field['id']) || $field['id'] !== 'nombre_completo') {
+        return;
+    }
+
+    if (preg_match('/\d/', $field['value'])) {
+        $form_settings = $record->get('form_settings');
+        $form_id = isset($form_settings['form_id']) ? $form_settings['form_id'] : 'sin_form_id';
+        leads_lts_log_form_error('Error validacion nombre | form_id=' . $form_id . ' | field_id=' . $field['id'] . ' | valor=' . sanitize_text_field($field['value']));
+        $ajax_handler->add_error($field['id'], 'El nombre no debe contener números');
+    }
+}, 9, 3);
 
 add_action('elementor_pro/forms/validation/tel', function($field, $record, $ajax_handler) {
     // Custom validation
