@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Leads to LTS API
-Description: Plugin UIN para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 4.3.5
+Description: Versión BRAVO MX para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
+Version: 5.0.0
 Author: Mimer - EPIC.GT
 */
 
