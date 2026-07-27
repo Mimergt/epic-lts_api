@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Plugin UIN para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 4.3.4
+Version: 4.3.5
 Author: Mimer - EPIC.GT
 */
 
@@ -135,6 +135,7 @@ function applts_mx_produccion($record, $ajax_handler) {
     $cPhone = leads_lts_get_field_value($fields, 'camPhone');
     $theName = leads_lts_get_field_value($fields, 'nombre');
     $theEmail = leads_lts_get_field_value($fields, 'email');
+    $theDeuda = leads_lts_get_field_value($fields, 'deuda');
     $CN = leads_lts_get_field_value($fields, 'formid');
     $userIP = leads_lts_get_client_ip();
 
@@ -184,6 +185,11 @@ function applts_mx_produccion($record, $ajax_handler) {
         'origin_keyword_google' => $keyword,
         'talktime' => '',
         'client' => '',
+        'extra_params' => array(
+            'nombre_completo' => $theName,
+            'correo' => $theEmail,
+            'deuda' => $theDeuda,
+        ),
     );
 
     $token = get_option('leads_lts_api_token', '');
