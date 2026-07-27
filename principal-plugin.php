@@ -2,7 +2,7 @@
 /*
 Plugin Name: Leads to LTS API
 Description: Versión BRAVO MX para enviar leads a LTS, mapear camPhone y registrar errores de formularios Elementor.
-Version: 5.0.1
+Version: 5.0.2
 Author: Mimer - EPIC.GT
 */
 
@@ -43,7 +43,7 @@ function add_custom_script() {
     $enable_debug = get_option('leads_lts_enable_debug', '0');
 
     // Encolar el script y pasar la IP al frontend
-    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '5.0.1', true);
+    wp_enqueue_script('custom-script', plugin_dir_url(__FILE__) . '/some_magic.js', array('jquery'), '5.0.2', true);
     wp_localize_script('custom-script', 'my_ajax_object', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'user_ip' => $userIP, // Añadir la IP del usuario
@@ -67,6 +67,46 @@ function leads_lts_get_client_ip() {
 
     return '0.0.0.0';
 }
+
+function leads_lts_get_default_phone_number() {
+    $default_phone = get_option('leads_lts_default_camphone', '5592509960');
+    $digits = preg_replace('/\D/', '', (string) $default_phone);
+
+    if ($digits === '') {
+        return '5592509960';
+    }
+
+    return $digits;
+}
+
+function leads_lts_get_phone_shortcode_value($type = 'number') {
+    if (get_option('leads_lts_enable_phone_shortcodes', '0') !== '1') {
+        return '';
+    }
+
+    $tel = isset($_GET['tel']) ? sanitize_text_field(wp_unslash($_GET['tel'])) : '';
+    $tel_numero = preg_replace('/\D/', '', $tel);
+
+    if ($tel_numero === '') {
+        $tel_numero = leads_lts_get_default_phone_number();
+    }
+
+    if ($type === 'url') {
+        return 'tel:' . $tel_numero;
+    }
+
+    return preg_replace('/(\d{3})(\d{3})(\d{4})/', '$1 $2 $3', $tel_numero);
+}
+
+function leads_lts_num_telefono_shortcode() {
+    return leads_lts_get_phone_shortcode_value('number');
+}
+add_shortcode('num_telefono', 'leads_lts_num_telefono_shortcode');
+
+function leads_lts_url_telefono_shortcode() {
+    return leads_lts_get_phone_shortcode_value('url');
+}
+add_shortcode('url_telefono', 'leads_lts_url_telefono_shortcode');
 
 function leads_lts_get_field_value($fields, $key) {
     if (!isset($fields[$key]['value'])) {

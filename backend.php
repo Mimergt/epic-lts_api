@@ -60,6 +60,7 @@ class LeadsLTSAdmin {
         register_setting('leads_lts_settings', 'leads_lts_phone_selector');
         register_setting('leads_lts_settings', 'leads_lts_enable_debug');
         register_setting('leads_lts_settings', 'leads_lts_enable_api_log');
+        register_setting('leads_lts_settings', 'leads_lts_enable_phone_shortcodes');
         register_setting('leads_lts_settings', 'leads_lts_api_token');
     }
 
@@ -88,6 +89,7 @@ class LeadsLTSAdmin {
         $phone_selector = get_option('leads_lts_phone_selector', '#call');
         $enable_debug = get_option('leads_lts_enable_debug', '0');
         $enable_api_log = get_option('leads_lts_enable_api_log', '0');
+        $enable_phone_shortcodes = get_option('leads_lts_enable_phone_shortcodes', '0');
         $api_token = get_option('leads_lts_api_token', '');
         ?>
         <div class="wrap">
@@ -132,6 +134,16 @@ class LeadsLTSAdmin {
                                             Activar log de llamadas a la API LTS
                                         </label>
                                         <p class="description">Guarda un registro detallado de todas las llamadas a la API LTS en <code>log.txt</code>.</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Shortcodes de teléfono</th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox" name="leads_lts_enable_phone_shortcodes" value="1" <?php checked($enable_phone_shortcodes, '1'); ?> />
+                                            Activar shortcodes [num_telefono] y [url_telefono]
+                                        </label>
+                                        <p class="description">Usa el número por defecto del backend cuando no venga el parámetro <code>tel</code> en la URL.</p>
                                     </td>
                                 </tr>
                                 <tr>
