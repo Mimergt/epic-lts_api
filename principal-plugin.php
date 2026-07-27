@@ -76,15 +76,61 @@ function leads_lts_get_field_value($fields, $key) {
     return sanitize_text_field($fields[$key]['value']);
 }
 
+function leads_lts_color_text($text, $color = '36') {
+    return "\033[{$color}m{$text}\033[0m";
+}
+
+function leads_lts_pretty_json($json_string) {
+    $json_array = json_decode($json_string, true);
+    if (!is_array($json_array)) {
+        return $json_string;
+    }
+
+    return json_encode($json_array, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+}
+
+function leads_lts_format_api_log($data) {
+    $lines = array();
+    $lines[] = str_repeat('=', 90);
+    $lines[] = leads_lts_color_text('LTS API REQUEST', '33');
+    $lines[] = 'Endpoint: ' . ($data['endpoint'] ?? '');
+    $lines[] = 'HTTP Code: ' . ($data['http_code'] ?? '');
+    $lines[] = 'Phone Campaign: ' . ($data['phone_campaign'] ?? '');
+    $lines[] = 'Campaign ID: ' . ($data['campaign'] ?? '');
+    $lines[] = 'Origin: ' . ($data['origin'] ?? '');
+    $lines[] = 'Name: ' . ($data['name_client'] ?? '');
+    $lines[] = 'Email: ' . ($data['email_client'] ?? '');
+    $lines[] = 'User IP: ' . ($data['ip'] ?? '');
+    $lines[] = 'Formulario: ' . ($data['form_name'] ?? '');
+    $lines[] = 'Phone: ' . ($data['phone'] ?? '');
+    $lines[] = '';
+    if (!empty($data['request'])) {
+        $lines[] = leads_lts_color_text('Request payload:', '32');
+        $lines[] = leads_lts_pretty_json($data['request']);
+        $lines[] = '';
+    }
+    if (!empty($data['response'])) {
+        $lines[] = leads_lts_color_text('Response payload:', '34');
+        $lines[] = leads_lts_pretty_json($data['response']);
+    }
+    $lines[] = str_repeat('=', 90);
+
+    return implode(PHP_EOL, $lines);
+}
+
 function leads_lts_write_line($filename, $message) {
     $timestamp = date('Y-m-d H:i:s');
-    $line = '[' . $timestamp . '] ' . $message . PHP_EOL;
+    $line = '[' . $timestamp . ']' . PHP_EOL . $message . PHP_EOL;
     file_put_contents(plugin_dir_path(__FILE__) . $filename, $line, FILE_APPEND | LOCK_EX);
 }
 
 function leads_lts_log_api($message) {
     if (get_option('leads_lts_enable_api_log', '0') !== '1') {
         return;
+    }
+
+    if (is_array($message)) {
+        $message = leads_lts_format_api_log($message);
     }
 
     leads_lts_write_line(LEADS_LTS_API_LOG_FILE, $message);
@@ -234,18 +280,20 @@ function applts_mx_produccion($record, $ajax_handler) {
         return;
     }
 
-    leads_lts_log_api(
-        'Response: ' . sanitize_text_field((string) $response) .
-        ' | Phone Campaign: ' . $postData['phone_campaign'] .
-        ' | Campaign ID: ' . $postData['campaign'] .
-        ' | Origen URL: ' . $postData['origin'] .
-        ' | End URL: ' . $url .
-        ' | Name: ' . $postData['name_client'] .
-        ' | Email: ' . $postData['email_client'] .
-        ' | User IP: ' . $postData['ip'] .
-        ' | Formulario: ' . $postData['form_name'] .
-        ' | Phone: ' . $postData['phone']
-    );
+    leads_lts_log_api(array(
+        'endpoint' => LEADS_LTS_API_ENDPOINT,
+        'http_code' => $http_code,
+        'response' => $response,
+        'request' => wp_json_encode($postData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+        'phone_campaign' => $postData['phone_campaign'],
+        'campaign' => $postData['campaign'],
+        'origin' => $postData['origin'],
+        'name_client' => $postData['name_client'],
+        'email_client' => $postData['email_client'],
+        'ip' => $postData['ip'],
+        'form_name' => $postData['form_name'],
+        'phone' => $postData['phone'],
+    ));
 
     $redirect_url = site_url('/gracias/?page_ref=' . rawurlencode($ref));
     $ajax_handler->add_response_data('redirect_url', $redirect_url);
