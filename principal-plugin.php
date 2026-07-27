@@ -133,8 +133,8 @@ function applts_mx_produccion($record, $ajax_handler) {
     $keyword = leads_lts_get_field_value($fields, 'keyword');
     $ref = leads_lts_get_field_value($fields, 'ref');
     $cPhone = leads_lts_get_field_value($fields, 'camPhone');
-    $theName = leads_lts_get_field_value($fields, 'nombre');
-    $theEmail = leads_lts_get_field_value($fields, 'email');
+    $theName = leads_lts_get_field_value($fields, 'nombre_completo');
+    $theEmail = leads_lts_get_field_value($fields, 'correo');
     $theDeuda = leads_lts_get_field_value($fields, 'deuda');
     $CN = leads_lts_get_field_value($fields, 'formid');
     $userIP = leads_lts_get_client_ip();
